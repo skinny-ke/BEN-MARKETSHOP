@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Styles */
+body {
+  @apply bg-gray-50 text-gray-800 antialiased;
+}
+
+/* Custom Reusable Classes */
+.input {
+  @apply border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500;
+}
+
+.btn {
+  @apply bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded transition-colors duration-200;
+}
+
+.card {
+  @apply bg-white shadow-md rounded-lg p-4 hover:shadow-lg transition-shadow duration-300;
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.section {
+  @apply py-8 md:py-12;
+}

@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: benmarket-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: benmarket
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - benmarket-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: benmarket-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://admin:password123@mongodb:27017/benmarket?authSource=admin
+      - JWT_SECRET=your_production_jwt_secret_change_this
+      - JWT_REFRESH_SECRET=your_production_jwt_refresh_secret_change_this
+      - JWT_EXPIRE=7d
+      - FRONTEND_URL=http://frontend:80
+      - CORS_ORIGIN=http://frontend:80
+    depends_on:
+      - mongodb
+    networks:
+      - benmarket-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: benmarket-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=http://backend:5000
+    depends_on:
+      - backend
+    networks:
+      - benmarket-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  benmarket-network:
+    driver: bridge
