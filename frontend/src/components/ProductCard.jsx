@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaShoppingCart, FaEye } from "react-icons/fa";
 import { useShop } from "../context/ShopContext";
+import WishlistButton from "./WishlistButton";
 
 export default function ProductCard({ product }) {
   const { addToCart } = useShop();
@@ -32,6 +33,11 @@ export default function ProductCard({ product }) {
               <FaShoppingCart />
             </button>
           </div>
+        </div>
+        
+        {/* Wishlist Button */}
+        <div className="absolute top-3 right-3">
+          <WishlistButton product={product} size="w-6 h-6" />
         </div>
       </div>
       

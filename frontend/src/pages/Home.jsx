@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import ProductCard from "../components/ProductCard";
+import AdvancedSearch from "../components/AdvancedSearch";
 import { useShop } from "../context/ShopContext";
 
 export default function Home() {
@@ -48,32 +49,16 @@ export default function Home() {
         </div>
       </motion.div>
 
-      {/* Search and Filter Section */}
+      {/* Advanced Search Section */}
       <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-          </div>
-          <div className="md:w-64">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              {categories.map(category => (
-                <option key={category} value={category}>
-                  {category === "all" ? "All Categories" : category.charAt(0).toUpperCase() + category.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <AdvancedSearch 
+          onSearch={setSearchTerm}
+          onFilter={(filters) => {
+            setSelectedCategory(filters.category || "all");
+            // Additional filtering logic can be added here
+          }}
+          products={products}
+        />
 
         {/* Products Grid */}
         <div className="mb-8">

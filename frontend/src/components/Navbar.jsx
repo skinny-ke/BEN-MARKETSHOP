@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
-import { FaShoppingCart, FaUser, FaSignOutAlt } from "react-icons/fa";
+import { FaShoppingCart, FaUser, FaSignOutAlt, FaHeart, FaSearch } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useShop } from "../context/ShopContext";
+import NotificationCenter from "./NotificationCenter";
+import DarkModeToggle from "./DarkModeToggle";
 
 export default function Navbar() {
   const { cart, user, logout } = useShop();
@@ -20,6 +22,22 @@ export default function Navbar() {
         
         <div className="flex items-center gap-6">
           <Link 
+            to="/wishlist" 
+            className="flex items-center gap-2 hover:text-green-200 transition-colors relative"
+          >
+            <FaHeart className="text-xl" />
+            <span className="font-medium">Wishlist</span>
+          </Link>
+          
+          <Link 
+            to="/track-order" 
+            className="flex items-center gap-2 hover:text-green-200 transition-colors"
+          >
+            <FaSearch className="text-xl" />
+            <span className="font-medium">Track Order</span>
+          </Link>
+          
+          <Link 
             to="/cart" 
             className="flex items-center gap-2 hover:text-green-200 transition-colors relative"
           >
@@ -36,12 +54,23 @@ export default function Navbar() {
             )}
           </Link>
           
+          <NotificationCenter />
+          <DarkModeToggle />
+          
           {user ? (
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <FaUser />
                 <span className="text-sm">{user.name}</span>
               </div>
+              {user.role === 'admin' && (
+                <Link
+                  to="/analytics"
+                  className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Analytics
+                </Link>
+              )}
               {user.role === 'admin' && (
                 <Link
                   to="/admin"

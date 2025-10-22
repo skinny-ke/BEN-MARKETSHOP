@@ -8,6 +8,9 @@ import Checkout from "./pages/Checkout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Admin from "./pages/Admin";
+import Wishlist from "./pages/Wishlist";
+import OrderTracking from "./pages/OrderTracking";
+import AnalyticsDashboard from "./components/AnalyticsDashboard";
 
 function App() {
   return (
@@ -22,6 +25,9 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/track-order" element={<OrderTracking />} />
+          <Route path="/analytics" element={<AnalyticsDashboard />} />
         </Routes>
       </main>
       <Footer />
