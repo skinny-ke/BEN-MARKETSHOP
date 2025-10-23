@@ -27,7 +27,7 @@ export default function Navbar() {
                   <SignedIn>
                     <Link
                       to="/wishlist"
-                      className="flex items-center gap-2 hover:text-green-200 transition-colors relative"
+                      className="flex items-center gap-2 hover:text-black-200 transition-colors relative"
                     >
                       <FaHeart className="text-xl" />
                       <span className="font-medium">Wishlist</span>
