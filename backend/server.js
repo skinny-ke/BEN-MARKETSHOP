@@ -8,6 +8,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+app.set('trust proxy', 1); // ✅ For Render/Netlify proxies
 
 // ==========================
 // 🧠 CONFIGURATION
@@ -21,10 +22,9 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 app.use(helmet());
 app.use(compression());
 
-// ⚙️ Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // allow more for production
+  windowMs: 15 * 60 * 1000,
+  max: 200,
   message: 'Too many requests, please try again later.',
 });
 app.use(limiter);
@@ -39,16 +39,17 @@ const allowedOrigins = [
   'https://ben-market.netlify.app',
 ];
 
-// Custom CORS logic with logging
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // allow curl/mobile apps
-
-      if (NODE_ENV === 'development' || allowedOrigins.includes(origin)) {
+      if (!origin) return callback(null, true);
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.includes('onrender.com')
+      ) {
         callback(null, true);
       } else {
-        console.warn(`🚫 Blocked CORS request from: ${origin}`);
+        console.warn(`🚫 Blocked CORS from: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     },
@@ -100,7 +101,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-// 🛰 Ping route for uptime services (e.g., Render keepalive)
 app.get('/ping', (req, res) => res.send('pong 🏓'));
 
 // ==========================
@@ -110,9 +110,12 @@ app.get('/', (req, res) => {
   res.send(`Ben Market API is running in ${NODE_ENV} mode 🚀`);
 });
 
-// ==========================
+// 🚫 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
 // ⚠️ ERROR HANDLING
-// ==========================
 app.use((err, req, res, next) => {
   console.error(`❗ [${req.method}] ${req.originalUrl} - ${err.message}`);
   res.status(500).json({
@@ -124,11 +127,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 🚫 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
-
 // ==========================
 // 🚀 SERVER START
 // ==========================
@@ -137,7 +135,6 @@ const server = app.listen(PORT, () => {
   console.log(`🌍 Environment: ${NODE_ENV}`);
 });
 
-// Graceful shutdown on crash or stop
 process.on('SIGINT', () => {
   console.log('🛑 Server shutting down gracefully...');
   server.close(() => {
