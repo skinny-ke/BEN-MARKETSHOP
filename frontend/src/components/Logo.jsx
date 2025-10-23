@@ -58,10 +58,10 @@ export default function Logo({ size = "default", showText = true, className = ""
           transition={{ delay: 0.2 }}
         >
           <span className={`${textSizes[size]} font-bold text-green-600 leading-tight`}>
-            BenMarket
+            Ben-Market
           </span>
           <motion.span 
-            className="text-xs text-green-500 font-medium -mt-1"
+            className="text-xs text-red-500 font-medium -mt-1"
             animate={{ opacity: [0.5, 1, 0.5] }}
             transition={{ 
               duration: 2,
