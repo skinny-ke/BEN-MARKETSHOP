@@ -20,7 +20,7 @@ export default function Navbar() {
     >
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="hover:opacity-80 transition-opacity">
-          <Logo size="default" showText={true} />
+          <Logo size="default" showText={true} logoSrc="/logo.png"/>
         </Link>
         
                 <div className="flex items-center gap-6">
