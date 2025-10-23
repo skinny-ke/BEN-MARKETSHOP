@@ -1,43 +1,24 @@
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaCheck, FaExclamation, FaInfo, FaTimes, FaDownload } from "react-icons/fa";
 
 const toastVariants = {
-  success: {
-    icon: FaCheck,
-    bgColor: "bg-green-500",
-    textColor: "text-white",
-    borderColor: "border-green-400"
-  },
-  error: {
-    icon: FaExclamation,
-    bgColor: "bg-red-500",
-    textColor: "text-white",
-    borderColor: "border-red-400"
-  },
-  info: {
-    icon: FaInfo,
-    bgColor: "bg-blue-500",
-    textColor: "text-white",
-    borderColor: "border-blue-400"
-  },
-  download: {
-    icon: FaDownload,
-    bgColor: "bg-purple-500",
-    textColor: "text-white",
-    borderColor: "border-purple-400"
-  }
+  success: { icon: FaCheck, bgColor: "bg-green-500", textColor: "text-white", borderColor: "border-green-400" },
+  error: { icon: FaExclamation, bgColor: "bg-red-500", textColor: "text-white", borderColor: "border-red-400" },
+  info: { icon: FaInfo, bgColor: "bg-blue-500", textColor: "text-white", borderColor: "border-blue-400" },
+  download: { icon: FaDownload, bgColor: "bg-purple-500", textColor: "text-white", borderColor: "border-purple-400" }
 };
 
-export default function Toast({ 
-  id, 
-  message, 
-  type = "success", 
-  duration = 3000, 
-  onClose,
-  action
-}) {
+export default function Toast({ id, message, type = "success", duration = 3000, onClose, action }) {
   const config = toastVariants[type] || toastVariants.success;
   const IconComponent = config.icon;
+
+  // Auto-dismiss
+  useEffect(() => {
+    if (!duration) return;
+    const timer = setTimeout(onClose, duration);
+    return () => clearTimeout(timer);
+  }, [duration, onClose]);
 
   return (
     <motion.div
@@ -74,6 +55,7 @@ export default function Toast({
       <button
         onClick={onClose}
         className="flex-shrink-0 ml-2 hover:bg-black hover:bg-opacity-10 rounded-full p-1 transition-colors"
+        aria-label="Close notification"
       >
         <FaTimes className="w-4 h-4" />
       </button>

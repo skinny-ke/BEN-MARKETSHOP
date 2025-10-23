@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { FaShoppingCart, FaEye, FaDownload } from "react-icons/fa";
 import { useShop } from "../context/ShopContext";
 import WishlistButton from "./WishlistButton";
-import DownloadableContent from "./DownloadableContent";
 
 export default function ProductCard({ product }) {
   const { addToCart } = useShop();
@@ -30,17 +29,18 @@ export default function ProductCard({ product }) {
             <button 
               onClick={() => addToCart(product)}
               className="bg-green-600 text-white p-2 rounded-full hover:bg-green-700 transition-colors"
+              disabled={product.stock === 0}
             >
               <FaShoppingCart />
             </button>
-            {product.downloadableFiles && product.downloadableFiles.length > 0 && (
+            {product.downloadableFiles?.length > 0 && (
               <div className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors">
                 <FaDownload />
               </div>
             )}
           </div>
         </div>
-        
+
         {/* Wishlist Button */}
         <div className="absolute top-3 right-3">
           <WishlistButton product={product} size="w-6 h-6" />
@@ -51,13 +51,13 @@ export default function ProductCard({ product }) {
         <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-2">
           {product.name}
         </h3>
-        
+
         {product.category && (
           <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mb-2">
             {product.category}
           </span>
         )}
-        
+
         <div className="flex items-center justify-between mt-3">
           <span className="text-2xl font-bold text-green-600">
             KSh {product.price?.toLocaleString()}
@@ -72,9 +72,9 @@ export default function ProductCard({ product }) {
             </span>
           )}
         </div>
-        
+
         {/* Downloadable Files Indicator */}
-        {product.downloadableFiles && product.downloadableFiles.length > 0 && (
+        {product.downloadableFiles?.length > 0 && (
           <div className="mt-3 flex items-center text-sm text-blue-600">
             <FaDownload className="w-4 h-4 mr-1" />
             <span>{product.downloadableFiles.length} downloadable file{product.downloadableFiles.length !== 1 ? 's' : ''}</span>

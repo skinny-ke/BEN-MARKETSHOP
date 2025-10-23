@@ -5,7 +5,10 @@ export default function LoadingSpinner({
   size = "default", 
   text = "Loading...", 
   showLogo = true,
-  className = ""
+  className = "",
+  primaryColor = "green-500",
+  secondaryColor = "green-600",
+  accentColor = "yellow-400"
 }) {
   const sizeClasses = {
     small: "w-8 h-8",
@@ -25,7 +28,7 @@ export default function LoadingSpinner({
     <div className={`flex flex-col items-center justify-center ${className}`}>
       {showLogo && (
         <motion.div
-          className={`${sizeClasses[size]} bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center shadow-lg mb-4`}
+          className={`relative ${sizeClasses[size]} bg-gradient-to-br from-${primaryColor} to-${secondaryColor} rounded-xl flex items-center justify-center shadow-lg mb-4`}
           animate={{ 
             rotate: [0, 360],
             scale: [1, 1.1, 1]
@@ -37,8 +40,19 @@ export default function LoadingSpinner({
           }}
         >
           <FaShoppingBag className="text-white text-lg" />
+          
+          {/* Optional Leaf Accent */}
           <motion.div
-            className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"
+            className="absolute -bottom-2 -left-2 text-white text-xs"
+            animate={{ rotate: [0, 20, -20, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <FaLeaf />
+          </motion.div>
+
+          {/* Pulsing Accent Dot */}
+          <motion.div
+            className={`absolute -top-1 -right-1 w-3 h-3 bg-${accentColor} rounded-full`}
             animate={{ 
               scale: [1, 1.5, 1],
               opacity: [0.7, 1, 0.7]
@@ -52,6 +66,7 @@ export default function LoadingSpinner({
         </motion.div>
       )}
 
+      {/* Loading Dots + Text */}
       <motion.div
         className="flex items-center space-x-2"
         initial={{ opacity: 0 }}
@@ -62,7 +77,7 @@ export default function LoadingSpinner({
           {[0, 1, 2].map((index) => (
             <motion.div
               key={index}
-              className="w-2 h-2 bg-green-600 rounded-full"
+              className={`w-2 h-2 bg-${secondaryColor} rounded-full`}
               animate={{
                 scale: [1, 1.5, 1],
                 opacity: [0.5, 1, 0.5]

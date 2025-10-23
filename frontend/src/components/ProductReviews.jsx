@@ -20,7 +20,7 @@ const ProductReviews = ({ productId, reviews = [], onAddReview }) => {
   });
   const [filterRating, setFilterRating] = useState(0);
 
-  // Mock reviews data - in real app, this would come from API
+  // Use passed reviews or mock data
   const mockReviews = [
     {
       id: 1,
@@ -74,59 +74,39 @@ const ProductReviews = ({ productId, reviews = [], onAddReview }) => {
     }
   ];
 
-  const allReviews = reviews.length > 0 ? reviews : mockReviews;
+  const allReviews = reviews.length ? reviews : mockReviews;
   const filteredReviews = filterRating > 0 
-    ? allReviews.filter(review => review.rating === filterRating)
+    ? allReviews.filter(r => r.rating === filterRating) 
     : allReviews;
 
-  const averageRating = allReviews.reduce((sum, review) => sum + review.rating, 0) / allReviews.length;
-  const ratingDistribution = [5, 4, 3, 2, 1].map(rating => ({
-    rating,
-    count: allReviews.filter(review => review.rating === rating).length,
-    percentage: (allReviews.filter(review => review.rating === rating).length / allReviews.length) * 100
-  }));
+  const averageRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+  const ratingDistribution = [5, 4, 3, 2, 1].map(rating => {
+    const count = allReviews.filter(r => r.rating === rating).length;
+    return { rating, count, percentage: (count / allReviews.length) * 100 };
+  });
 
   const handleSubmitReview = (e) => {
     e.preventDefault();
-    if (newReview.rating === 0) {
-      alert('Please select a rating');
-      return;
-    }
-    if (!newReview.title || !newReview.comment) {
-      alert('Please fill in all required fields');
-      return;
-    }
-    
-    // In real app, this would call the API
-    console.log('Submitting review:', newReview);
-    onAddReview && onAddReview(newReview);
-    
-    // Reset form
-    setNewReview({
-      rating: 0,
-      title: '',
-      comment: '',
-      name: '',
-      email: ''
-    });
+    if (newReview.rating === 0) return alert('Please select a rating');
+    if (!newReview.title || !newReview.comment) return alert('Please fill in all required fields');
+
+    onAddReview?.(newReview);
+    setNewReview({ rating: 0, title: '', comment: '', name: '', email: '' });
     setShowReviewForm(false);
   };
 
   const StarRating = ({ rating, onRatingChange, interactive = false, size = 'w-5 h-5' }) => (
     <div className="flex items-center">
-      {[1, 2, 3, 4, 5].map((star) => (
+      {[1, 2, 3, 4, 5].map(star => (
         <button
           key={star}
+          type={interactive ? 'button' : undefined}
           onClick={() => interactive && onRatingChange(star)}
           className={`${interactive ? 'cursor-pointer' : 'cursor-default'} ${size} ${
             star <= rating ? 'text-yellow-400' : 'text-gray-300'
           }`}
         >
-          {star <= rating ? (
-            <StarIconSolid className="w-full h-full fill-current" />
-          ) : (
-            <StarIcon className="w-full h-full" />
-          )}
+          {star <= rating ? <StarIconSolid className="w-full h-full fill-current" /> : <StarIcon className="w-full h-full" />}
         </button>
       ))}
     </div>
@@ -138,17 +118,12 @@ const ProductReviews = ({ productId, reviews = [], onAddReview }) => {
 
       {/* Rating Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        {/* Overall Rating */}
         <div>
           <div className="flex items-center gap-4 mb-4">
-            <div className="text-4xl font-bold text-gray-900">
-              {averageRating.toFixed(1)}
-            </div>
+            <div className="text-4xl font-bold text-gray-900">{averageRating.toFixed(1)}</div>
             <div>
               <StarRating rating={Math.round(averageRating)} size="w-6 h-6" />
-              <p className="text-sm text-gray-600 mt-1">
-                Based on {allReviews.length} reviews
-              </p>
+              <p className="text-sm text-gray-600 mt-1">Based on {allReviews.length} reviews</p>
             </div>
           </div>
 
@@ -159,10 +134,7 @@ const ProductReviews = ({ productId, reviews = [], onAddReview }) => {
                 <span className="text-sm font-medium text-gray-700 w-8">{rating}</span>
                 <StarIcon className="w-4 h-4 text-yellow-400" />
                 <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-yellow-400 h-2 rounded-full"
-                    style={{ width: `${percentage}%` }}
-                  />
+                  <div className="bg-yellow-400 h-2 rounded-full" style={{ width: `${percentage}%` }} />
                 </div>
                 <span className="text-sm text-gray-600 w-8">{count}</span>
               </div>
@@ -175,6 +147,7 @@ const ProductReviews = ({ productId, reviews = [], onAddReview }) => {
           <h4 className="font-semibold text-gray-900 mb-4">Filter by Rating</h4>
           <div className="space-y-2">
             <button
+              type="button"
               onClick={() => setFilterRating(0)}
               className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                 filterRating === 0 ? 'bg-green-100 text-green-800' : 'hover:bg-gray-100'
@@ -182,16 +155,17 @@ const ProductReviews = ({ productId, reviews = [], onAddReview }) => {
             >
               All Reviews ({allReviews.length})
             </button>
-            {[5, 4, 3, 2, 1].map((rating) => (
+            {[5, 4, 3, 2, 1].map(r => (
               <button
-                key={rating}
-                onClick={() => setFilterRating(rating)}
+                key={r}
+                type="button"
+                onClick={() => setFilterRating(r)}
                 className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                  filterRating === rating ? 'bg-green-100 text-green-800' : 'hover:bg-gray-100'
+                  filterRating === r ? 'bg-green-100 text-green-800' : 'hover:bg-gray-100'
                 }`}
               >
-                <StarRating rating={rating} size="w-4 h-4" />
-                <span>({allReviews.filter(r => r.rating === rating).length})</span>
+                <StarRating rating={r} size="w-4 h-4" />
+                <span>({allReviews.filter(rv => rv.rating === r).length})</span>
               </button>
             ))}
           </div>
@@ -201,6 +175,7 @@ const ProductReviews = ({ productId, reviews = [], onAddReview }) => {
       {/* Add Review Button */}
       <div className="mb-6">
         <button
+          type="button"
           onClick={() => setShowReviewForm(!showReviewForm)}
           className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium"
         >
@@ -219,9 +194,7 @@ const ProductReviews = ({ productId, reviews = [], onAddReview }) => {
           <h4 className="text-lg font-semibold text-gray-900 mb-4">Write Your Review</h4>
           <form onSubmit={handleSubmitReview} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Rating *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Rating *</label>
               <StarRating
                 rating={newReview.rating}
                 onRatingChange={(rating) => setNewReview(prev => ({ ...prev, rating }))}
@@ -230,9 +203,7 @@ const ProductReviews = ({ productId, reviews = [], onAddReview }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Review Title *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Review Title *</label>
               <input
                 type="text"
                 value={newReview.title}
@@ -244,9 +215,7 @@ const ProductReviews = ({ productId, reviews = [], onAddReview }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your Review *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Your Review *</label>
               <textarea
                 value={newReview.comment}
                 onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
@@ -259,9 +228,7 @@ const ProductReviews = ({ productId, reviews = [], onAddReview }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Your Name
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Your Name</label>
                 <input
                   type="text"
                   value={newReview.name}
@@ -271,9 +238,7 @@ const ProductReviews = ({ productId, reviews = [], onAddReview }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                 <input
                   type="email"
                   value={newReview.email}
@@ -348,11 +313,11 @@ const ProductReviews = ({ productId, reviews = [], onAddReview }) => {
               <p className="text-gray-700 mb-3">{review.comment}</p>
 
               <div className="flex items-center gap-4 text-sm text-gray-500">
-                <button className="flex items-center gap-1 hover:text-gray-700 transition-colors">
+                <button type="button" className="flex items-center gap-1 hover:text-gray-700 transition-colors">
                   <ThumbUpIcon className="w-4 h-4" />
                   Helpful ({review.helpful})
                 </button>
-                <button className="hover:text-gray-700 transition-colors">
+                <button type="button" className="hover:text-gray-700 transition-colors">
                   Reply
                 </button>
               </div>

@@ -1,16 +1,8 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
-  FaDownload, 
-  FaFilePdf, 
-  FaFileImage, 
-  FaFileWord, 
-  FaFileExcel, 
-  FaFilePowerpoint,
-  FaFileAlt,
-  FaSpinner,
-  FaCheck,
-  FaTimes
+  FaDownload, FaFilePdf, FaFileImage, FaFileWord, FaFileExcel, FaFilePowerpoint,
+  FaFileAlt, FaSpinner, FaCheck
 } from "react-icons/fa";
 
 const fileTypeIcons = {
@@ -47,29 +39,16 @@ const fileTypeColors = {
   default: "text-gray-500"
 };
 
-export default function DownloadableContent({ 
-  files = [], 
-  productName = "Product",
-  className = "",
-  variant = "default"
-}) {
+export default function DownloadableContent({ files = [], productName = "Product", className = "", variant = "default" }) {
   const [downloadingFiles, setDownloadingFiles] = useState(new Set());
   const [completedDownloads, setCompletedDownloads] = useState(new Set());
+  const [progress, setProgress] = useState({});
+  const [toasts, setToasts] = useState([]); // new: toast messages
+  const [aggregateProgress, setAggregateProgress] = useState(0);
 
-  const getFileExtension = (filename) => {
-    return filename.split('.').pop().toLowerCase();
-  };
-
-  const getFileIcon = (filename) => {
-    const extension = getFileExtension(filename);
-    return fileTypeIcons[extension] || fileTypeIcons.default;
-  };
-
-  const getFileColor = (filename) => {
-    const extension = getFileExtension(filename);
-    return fileTypeColors[extension] || fileTypeColors.default;
-  };
-
+  const getFileExtension = (filename) => filename.split('.').pop().toLowerCase();
+  const getFileIcon = (filename) => fileTypeIcons[getFileExtension(filename)] || fileTypeIcons.default;
+  const getFileColor = (filename) => fileTypeColors[getFileExtension(filename)] || fileTypeColors.default;
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -78,34 +57,56 @@ export default function DownloadableContent({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleDownload = async (file) => {
+  const showToast = (message) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3000);
+  };
+
+  const handleDownload = async (file, updateAggregate = true) => {
     const fileId = `${file.name}-${file.size}`;
-    
+    if (downloadingFiles.has(fileId)) return;
+
     try {
       setDownloadingFiles(prev => new Set([...prev, fileId]));
-      
-      // Simulate download process
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-      
-      // Create a temporary download link
+      setProgress(prev => ({ ...prev, [fileId]: 0 }));
+
+      // Simulate download with incremental progress
+      for (let i = 1; i <= 10; i++) {
+        await new Promise(resolve => setTimeout(resolve, 150 + Math.random() * 150));
+        setProgress(prev => ({ ...prev, [fileId]: i * 10 }));
+
+        if (updateAggregate) {
+          const totalProgress = files.reduce((sum, f) => sum + (f.name === file.name ? i * 10 : (progress[`${f.name}-${f.size}`] || 0)), 0);
+          setAggregateProgress(Math.floor(totalProgress / files.length));
+        }
+      }
+
       const link = document.createElement('a');
       link.href = file.url || URL.createObjectURL(new Blob(['Sample content'], { type: 'text/plain' }));
       link.download = file.name;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       setCompletedDownloads(prev => new Set([...prev, fileId]));
-      
-      // Remove from completed after 3 seconds
+      showToast(`${file.name} downloaded!`);
+
       setTimeout(() => {
         setCompletedDownloads(prev => {
           const newSet = new Set(prev);
           newSet.delete(fileId);
           return newSet;
         });
+        setProgress(prev => {
+          const newProg = { ...prev };
+          delete newProg[fileId];
+          return newProg;
+        });
       }, 3000);
-      
+
     } catch (error) {
       console.error('Download failed:', error);
     } finally {
@@ -123,9 +124,7 @@ export default function DownloadableContent({
     minimal: "bg-transparent border-none"
   };
 
-  if (!files || files.length === 0) {
-    return null;
-  }
+  if (!files || files.length === 0) return null;
 
   return (
     <motion.div 
@@ -144,6 +143,18 @@ export default function DownloadableContent({
         </span>
       </div>
 
+      {/* Aggregate Progress Bar */}
+      {aggregateProgress > 0 && aggregateProgress < 100 && (
+        <div className="h-2 w-full bg-gray-200 rounded-full mb-3 overflow-hidden">
+          <motion.div
+            className="h-full bg-green-500"
+            initial={{ width: 0 }}
+            animate={{ width: `${aggregateProgress}%` }}
+            transition={{ ease: "easeOut", duration: 0.2 }}
+          />
+        </div>
+      )}
+
       <div className="space-y-3">
         {files.map((file, index) => {
           const fileId = `${file.name}-${file.size}`;
@@ -151,67 +162,80 @@ export default function DownloadableContent({
           const isCompleted = completedDownloads.has(fileId);
           const FileIcon = getFileIcon(file.name);
           const fileColor = getFileColor(file.name);
+          const fileProgress = progress[fileId] || 0;
 
           return (
             <motion.div
               key={index}
-              className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:border-green-300 transition-colors"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              className="flex flex-col p-3 bg-white rounded-lg border border-gray-200 hover:border-green-300 transition-colors"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
             >
-              <div className="flex items-center space-x-3 flex-1 min-w-0">
-                <div className={`text-2xl ${fileColor}`}>
-                  <FileIcon />
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">
-                    {file.name}
-                  </p>
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <span>{formatFileSize(file.size || 0)}</span>
-                    <span>•</span>
-                    <span className="capitalize">{getFileExtension(file.name)}</span>
-                    {file.description && (
-                      <>
-                        <span>•</span>
-                        <span className="truncate">{file.description}</span>
-                      </>
-                    )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <div className={`text-2xl ${fileColor}`}>
+                    <FileIcon />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{file.name}</p>
+                    <div className="flex items-center space-x-2 text-sm text-gray-500 truncate">
+                      <span>{formatFileSize(file.size || 0)}</span>
+                      <span>•</span>
+                      <span className="capitalize">{getFileExtension(file.name)}</span>
+                      {file.description && (
+                        <>
+                          <span>•</span>
+                          <span className="truncate">{file.description}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
+
+                <motion.button
+                  onClick={() => handleDownload(file)}
+                  disabled={isDownloading}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
+                    isCompleted
+                      ? 'bg-green-100 text-green-700 border border-green-200'
+                      : isDownloading
+                      ? 'bg-yellow-100 text-yellow-700 border border-yellow-200 cursor-not-allowed'
+                      : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-md'
+                  }`}
+                  whileHover={!isDownloading ? { scale: 1.05 } : {}}
+                  whileTap={!isDownloading ? { scale: 0.95 } : {}}
+                >
+                  {isCompleted ? (
+                    <>
+                      <FaCheck className="w-4 h-4" />
+                      <span>Downloaded</span>
+                    </>
+                  ) : isDownloading ? (
+                    <>
+                      <FaSpinner className="w-4 h-4 animate-spin" />
+                      <span>Downloading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaDownload className="w-4 h-4" />
+                      <span>Download</span>
+                    </>
+                  )}
+                </motion.button>
               </div>
 
-              <motion.button
-                onClick={() => handleDownload(file)}
-                disabled={isDownloading}
-                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
-                  isCompleted
-                    ? 'bg-green-100 text-green-700 border border-green-200'
-                    : isDownloading
-                    ? 'bg-yellow-100 text-yellow-700 border border-yellow-200 cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-md'
-                }`}
-                whileHover={!isDownloading ? { scale: 1.05 } : {}}
-                whileTap={!isDownloading ? { scale: 0.95 } : {}}
-              >
-                {isCompleted ? (
-                  <>
-                    <FaCheck className="w-4 h-4" />
-                    <span>Downloaded</span>
-                  </>
-                ) : isDownloading ? (
-                  <>
-                    <FaSpinner className="w-4 h-4 animate-spin" />
-                    <span>Downloading...</span>
-                  </>
-                ) : (
-                  <>
-                    <FaDownload className="w-4 h-4" />
-                    <span>Download</span>
-                  </>
-                )}
-              </motion.button>
+              {/* Individual Progress Bar */}
+              {isDownloading && (
+                <div className="h-1 w-full bg-gray-200 rounded-full mt-2 overflow-hidden">
+                  <motion.div
+                    className="h-full bg-green-500"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${fileProgress}%` }}
+                    transition={{ ease: "easeOut", duration: 0.2 }}
+                  />
+                </div>
+              )}
             </motion.div>
           );
         })}
@@ -230,7 +254,21 @@ export default function DownloadableContent({
         </motion.button>
       )}
 
-      {/* Disclaimer */}
+      {/* Toast Notifications */}
+      <AnimatePresence>
+        {toasts.map(toast => (
+          <motion.div
+            key={toast.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="fixed bottom-5 right-5 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50"
+          >
+            {toast.message}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
       <p className="text-xs text-gray-500 mt-3 text-center">
         Downloads are for personal use only. Please respect copyright and licensing terms.
       </p>
