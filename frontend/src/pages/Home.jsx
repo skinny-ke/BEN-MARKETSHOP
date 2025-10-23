@@ -2,6 +2,9 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import ProductCard from "../components/ProductCard";
 import AdvancedSearch from "../components/AdvancedSearch";
+import EnhancedSearch from "../components/EnhancedSearch";
+import Quotes from "../components/Quotes";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { useShop } from "../context/ShopContext";
 
 export default function Home() {
@@ -23,10 +26,11 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading products...</p>
-        </div>
+        <LoadingSpinner 
+          size="xl" 
+          text="Loading amazing products..." 
+          showLogo={true}
+        />
       </div>
     );
   }
@@ -46,12 +50,28 @@ export default function Home() {
           <p className="text-xl md:text-2xl mb-8 opacity-90">
             Your one-stop shop for quality products
           </p>
+          
+          {/* Inspirational Quote */}
+          <motion.div 
+            className="max-w-4xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <Quotes 
+              variant="hero" 
+              autoRotate={true} 
+              interval={6000}
+              showCategory={true}
+              className="mt-8"
+            />
+          </motion.div>
         </div>
       </motion.div>
 
-      {/* Advanced Search Section */}
+      {/* Enhanced Search Section */}
       <div className="container mx-auto px-4 py-8">
-        <AdvancedSearch 
+        <EnhancedSearch 
           onSearch={setSearchTerm}
           onFilter={(filters) => {
             setSelectedCategory(filters.category || "all");
@@ -59,6 +79,22 @@ export default function Home() {
           }}
           products={products}
         />
+
+        {/* Motivational Quote Section */}
+        <motion.div 
+          className="my-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Quotes 
+            variant="card" 
+            autoRotate={true} 
+            interval={8000}
+            showCategory={true}
+            className="max-w-4xl mx-auto"
+          />
+        </motion.div>
 
         {/* Products Grid */}
         <div className="mb-8">

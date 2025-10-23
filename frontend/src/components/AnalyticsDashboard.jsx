@@ -21,7 +21,7 @@ import {
   ShoppingCartIcon,
   CurrencyDollarIcon,
   UsersIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon,
   EyeIcon
 } from '@heroicons/react/24/outline';
 
@@ -95,7 +95,7 @@ export default function AnalyticsDashboard() {
           <p className="text-sm font-medium text-gray-600">{title}</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
           <div className="flex items-center mt-2">
-            <TrendingUpIcon className={`w-4 h-4 ${change >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+            <ArrowTrendingUpIcon className={`w-4 h-4 ${change >= 0 ? 'text-green-500' : 'text-red-500'}`} />
             <span className={`text-sm font-medium ml-1 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {change >= 0 ? '+' : ''}{change}%
             </span>

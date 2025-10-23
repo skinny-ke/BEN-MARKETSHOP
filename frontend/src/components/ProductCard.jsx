@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FaShoppingCart, FaEye } from "react-icons/fa";
+import { FaShoppingCart, FaEye, FaDownload } from "react-icons/fa";
 import { useShop } from "../context/ShopContext";
 import WishlistButton from "./WishlistButton";
+import DownloadableContent from "./DownloadableContent";
 
 export default function ProductCard({ product }) {
   const { addToCart } = useShop();
@@ -32,6 +33,11 @@ export default function ProductCard({ product }) {
             >
               <FaShoppingCart />
             </button>
+            {product.downloadableFiles && product.downloadableFiles.length > 0 && (
+              <div className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors">
+                <FaDownload />
+              </div>
+            )}
           </div>
         </div>
         
@@ -67,6 +73,14 @@ export default function ProductCard({ product }) {
           )}
         </div>
         
+        {/* Downloadable Files Indicator */}
+        {product.downloadableFiles && product.downloadableFiles.length > 0 && (
+          <div className="mt-3 flex items-center text-sm text-blue-600">
+            <FaDownload className="w-4 h-4 mr-1" />
+            <span>{product.downloadableFiles.length} downloadable file{product.downloadableFiles.length !== 1 ? 's' : ''}</span>
+          </div>
+        )}
+
         <div className="mt-4 flex gap-2">
           <Link 
             to={`/product/${product._id}`}

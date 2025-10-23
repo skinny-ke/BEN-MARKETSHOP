@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { FaShoppingCart, FaArrowLeft, FaStar, FaHeart } from "react-icons/fa";
 import { useShop } from "../context/ShopContext";
 import { productService } from "../api/services";
+import DownloadableContent from "../components/DownloadableContent";
 import toast from "react-hot-toast";
 
 export default function ProductDetails() {
@@ -203,6 +204,23 @@ export default function ProductDetails() {
               </div>
             </div>
           </div>
+
+          {/* Downloadable Content Section */}
+          {product.downloadableFiles && product.downloadableFiles.length > 0 && (
+            <motion.div 
+              className="mt-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <DownloadableContent 
+                files={product.downloadableFiles}
+                productName={product.name}
+                variant="card"
+                className="max-w-4xl mx-auto"
+              />
+            </motion.div>
+          )}
         </motion.div>
       </div>
     </div>

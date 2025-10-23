@@ -2,18 +2,20 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import { FaCreditCard, FaPhone, FaMapMarkerAlt, FaSpinner } from "react-icons/fa";
+import { useUser } from "@clerk/clerk-react";
 import { useShop } from "../context/ShopContext";
 import { orderService, mpesaService } from "../api/services";
 import toast from "react-hot-toast";
 
 export default function Checkout() {
-  const { cart, clearCart, user } = useShop();
+  const { cart, clearCart } = useShop();
+  const { user } = useUser();
   const [loading, setLoading] = useState(false);
   const [paymentStep, setPaymentStep] = useState('form'); // 'form', 'processing', 'success'
   
   const { register, handleSubmit, formState: { errors }, watch } = useForm({
     defaultValues: {
-      phone: '',
+      phone: user?.phoneNumbers[0]?.phoneNumber || '',
       address: '',
       city: '',
       notes: ''

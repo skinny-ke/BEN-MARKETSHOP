@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { productService } from '../api/services';
+import { enhanceProductsWithDownloads } from '../utils/sampleData';
 import toast from 'react-hot-toast';
 
 const ShopContext = createContext();
@@ -19,7 +20,7 @@ export const ShopProvider = ({ children }) => {
     } catch { return []; }
   });
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
   useEffect(() => {
     fetchProducts();
@@ -37,7 +38,8 @@ export const ShopProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await productService.getProducts();
-      setProducts(response.data || []);
+      const productsWithDownloads = enhanceProductsWithDownloads(response.data || []);
+      setProducts(productsWithDownloads);
     } catch (error) {
       console.error('Fetch products error:', error);
       toast.error('Failed to load products');

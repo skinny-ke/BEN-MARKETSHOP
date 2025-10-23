@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -11,27 +12,106 @@ import Admin from "./pages/Admin";
 import Wishlist from "./pages/Wishlist";
 import OrderTracking from "./pages/OrderTracking";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
+import Profile from "./pages/Profile";
+
+// Get the Clerk publishable key from environment variables
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "pk_test_placeholder";
 
 function App() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-grow">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/product/:id" element={<ProductDetails />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/wishlist" element={<Wishlist />} />
-          <Route path="/track-order" element={<OrderTracking />} />
-          <Route path="/analytics" element={<AnalyticsDashboard />} />
-        </Routes>
-      </main>
-      <Footer />
-    </div>
+    <ClerkProvider publishableKey={clerkPubKey}>
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-grow">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route 
+              path="/checkout" 
+              element={
+                <>
+                  <SignedIn>
+                    <Checkout />
+                  </SignedIn>
+                  <SignedOut>
+                    <RedirectToSignIn />
+                  </SignedOut>
+                </>
+              } 
+            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route 
+              path="/admin" 
+              element={
+                <>
+                  <SignedIn>
+                    <Admin />
+                  </SignedIn>
+                  <SignedOut>
+                    <RedirectToSignIn />
+                  </SignedOut>
+                </>
+              } 
+            />
+            <Route 
+              path="/wishlist" 
+              element={
+                <>
+                  <SignedIn>
+                    <Wishlist />
+                  </SignedIn>
+                  <SignedOut>
+                    <RedirectToSignIn />
+                  </SignedOut>
+                </>
+              } 
+            />
+            <Route 
+              path="/track-order" 
+              element={
+                <>
+                  <SignedIn>
+                    <OrderTracking />
+                  </SignedIn>
+                  <SignedOut>
+                    <RedirectToSignIn />
+                  </SignedOut>
+                </>
+              } 
+            />
+            <Route 
+              path="/analytics" 
+              element={
+                <>
+                  <SignedIn>
+                    <AnalyticsDashboard />
+                  </SignedIn>
+                  <SignedOut>
+                    <RedirectToSignIn />
+                  </SignedOut>
+                </>
+              } 
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <>
+                  <SignedIn>
+                    <Profile />
+                  </SignedIn>
+                  <SignedOut>
+                    <RedirectToSignIn />
+                  </SignedOut>
+                </>
+              } 
+            />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </ClerkProvider>
   );
 }
 
