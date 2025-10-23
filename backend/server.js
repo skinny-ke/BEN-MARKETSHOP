@@ -9,41 +9,77 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 
-// 🛡 Security middleware
+// ==========================
+// 🧠 CONFIGURATION
+// ==========================
+const PORT = process.env.PORT || 5001;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// ==========================
+// 🛡 SECURITY MIDDLEWARE
+// ==========================
 app.use(helmet());
 app.use(compression());
 
 // ⚙️ Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 200, // allow more for production
+  message: 'Too many requests, please try again later.',
 });
 app.use(limiter);
 
-// 🌍 CORS configuration — Option 1 (Hardcoded)
+// ==========================
+// 🌍 ADVANCED CORS SETUP
+// ==========================
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://ben-marketshop.vercel.app',
+  'https://ben-market.netlify.app',
+];
+
+// Custom CORS logic with logging
 app.use(
   cors({
-    origin: [
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'https://ben-marketshop.vercel.app', // ✅ your deployed frontend
-    ],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // allow curl/mobile apps
+
+      if (NODE_ENV === 'development' || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`🚫 Blocked CORS request from: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   })
 );
 
-// 🧱 Body parsers
+// ==========================
+// 🧱 PARSERS & LOGGING
+// ==========================
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-
-// 🪵 Logging
 app.use(morgan('combined'));
 
-// 📦 Connect to database
-connectDB();
+// ==========================
+// 📦 DATABASE CONNECTION
+// ==========================
+(async () => {
+  try {
+    await connectDB();
+    console.log('✅ MongoDB connected successfully');
+  } catch (err) {
+    console.error('❌ MongoDB connection failed:', err.message);
+    process.exit(1);
+  }
+})();
 
-// 🛣 API Routes
+// ==========================
+// 🛣 API ROUTES
+// ==========================
 app.use('/api/products', require('./Routes/product'));
 app.use('/api/orders', require('./Routes/order'));
 app.use('/api/upload', require('./Routes/upload'));
@@ -52,24 +88,39 @@ app.use('/api/mpesa', require('./Routes/mpesa'));
 app.use('/api/payment', require('./Routes/payment'));
 app.use('/api/auth/refresh', require('./Routes/auth_refresh'));
 
-// 💚 Health check
+// ==========================
+// 💚 HEALTH & STATUS
+// ==========================
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
-    timestamp: new Date().toISOString(),
+    env: NODE_ENV,
     uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
   });
 });
 
-// 🏠 Base route
-app.get('/', (req, res) => res.send('Ben Market API is running...'));
+// 🛰 Ping route for uptime services (e.g., Render keepalive)
+app.get('/ping', (req, res) => res.send('pong 🏓'));
 
-// ⚠️ Error handling middleware
+// ==========================
+// 🏠 ROOT ROUTE
+// ==========================
+app.get('/', (req, res) => {
+  res.send(`Ben Market API is running in ${NODE_ENV} mode 🚀`);
+});
+
+// ==========================
+// ⚠️ ERROR HANDLING
+// ==========================
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error(`❗ [${req.method}] ${req.originalUrl} - ${err.message}`);
   res.status(500).json({
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
+    success: false,
+    message:
+      NODE_ENV === 'development'
+        ? err.message
+        : 'Internal Server Error, please try again later.',
   });
 });
 
@@ -78,9 +129,19 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// 🚀 Start server
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
+// ==========================
+// 🚀 SERVER START
+// ==========================
+const server = app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌍 Environment: ${NODE_ENV}`);
+});
+
+// Graceful shutdown on crash or stop
+process.on('SIGINT', () => {
+  console.log('🛑 Server shutting down gracefully...');
+  server.close(() => {
+    console.log('✅ Server closed. Bye!');
+    process.exit(0);
+  });
 });
