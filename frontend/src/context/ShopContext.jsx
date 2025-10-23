@@ -12,24 +12,31 @@ export const ShopProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('user')) || null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   });
   const [cart, setCart] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('bm_cart')) || [];
-    } catch { return []; }
+    } catch {
+      return [];
+    }
   });
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
+  // Fetch products on mount
   useEffect(() => {
     fetchProducts();
   }, []);
 
+  // Persist cart to localStorage
   useEffect(() => {
     localStorage.setItem('bm_cart', JSON.stringify(cart));
   }, [cart]);
 
+  // Persist user to localStorage
   useEffect(() => {
     localStorage.setItem('user', JSON.stringify(user));
   }, [user]);
@@ -50,10 +57,12 @@ export const ShopProvider = ({ children }) => {
 
   const addToCart = (product) => {
     setCart(prev => {
-      const exist = prev.find(i => i._id === product._id);
+      const exist = prev.find(item => item._id === product._id);
       if (exist) {
         toast.success('Quantity updated');
-        return prev.map(i => i._id === product._id ? { ...i, qty: (i.qty || 1) + 1 } : i);
+        return prev.map(item =>
+          item._id === product._id ? { ...item, qty: (item.qty || 1) + 1 } : item
+        );
       }
       toast.success('Added to cart');
       return [...prev, { ...product, qty: 1 }];
@@ -65,11 +74,11 @@ export const ShopProvider = ({ children }) => {
       removeFromCart(id);
       return;
     }
-    setCart(prev => prev.map(i => i._id === id ? { ...i, qty } : i));
+    setCart(prev => prev.map(item => item._id === id ? { ...item, qty } : item));
   };
 
   const removeFromCart = (id) => {
-    setCart(prev => prev.filter(i => i._id !== id));
+    setCart(prev => prev.filter(item => item._id !== id));
     toast.success('Removed from cart');
   };
 
@@ -80,7 +89,7 @@ export const ShopProvider = ({ children }) => {
 
   const login = (userData) => {
     setUser(userData);
-    toast.success('Welcome back!');
+    toast.success(`Welcome back, ${userData.name || 'User'}!`);
   };
 
   const logout = () => {
@@ -92,19 +101,19 @@ export const ShopProvider = ({ children }) => {
   };
 
   return (
-    <ShopContext.Provider value={{ 
-      products, 
-      cart, 
+    <ShopContext.Provider value={{
+      products,
+      cart,
       user,
       loading,
-      addToCart, 
+      addToCart,
       updateCartItem,
-      removeFromCart, 
+      removeFromCart,
       clearCart,
       login,
       logout,
       fetchProducts,
-      API_URL 
+      API_URL
     }}>
       {children}
     </ShopContext.Provider>

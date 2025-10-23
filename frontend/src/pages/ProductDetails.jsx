@@ -23,17 +23,15 @@ export default function ProductDetails() {
         const response = await productService.getProduct(id);
         setProduct(response.data);
       } catch (error) {
-        console.error('Error fetching product:', error);
-        toast.error('Product not found');
-        navigate('/');
+        console.error("Error fetching product:", error);
+        toast.error("Product not found");
+        navigate("/");
       } finally {
         setLoading(false);
       }
     };
 
-    if (id) {
-      fetchProduct();
-    }
+    if (id) fetchProduct();
   }, [id, navigate]);
 
   if (loading) {
@@ -52,8 +50,8 @@ export default function ProductDetails() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-600 mb-2">Product not found</h2>
-          <button 
-            onClick={() => navigate('/')}
+          <button
+            onClick={() => navigate("/")}
             className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
           >
             Back to Home
@@ -64,13 +62,15 @@ export default function ProductDetails() {
   }
 
   const handleAddToCart = () => {
-    for (let i = 0; i < quantity; i++) {
-      addToCart(product);
+    if (product.stock === 0) {
+      toast.error("Sorry, this product is out of stock");
+      return;
     }
+    for (let i = 0; i < quantity; i++) addToCart(product);
     toast.success(`${quantity} item(s) added to cart`);
   };
 
-  const images = product.image ? [product.image] : ['/placeholder.png'];
+  const images = product.images && product.images.length > 0 ? product.images : [product.image || "/placeholder.png"];
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -85,29 +85,24 @@ export default function ProductDetails() {
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6 transition-colors"
           >
-            <FaArrowLeft />
-            Back
+            <FaArrowLeft /> Back
           </button>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Product Images */}
             <div className="space-y-4">
               <div className="aspect-square bg-white rounded-xl shadow-lg overflow-hidden">
-                <img
-                  src={images[selectedImage]}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
+                <img src={images[selectedImage]} alt={product.name} className="w-full h-full object-cover" />
               </div>
-              
+
               {images.length > 1 && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 overflow-x-auto">
                   {images.map((img, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImage(index)}
-                      className={`w-20 h-20 rounded-lg overflow-hidden border-2 ${
-                        selectedImage === index ? 'border-green-600' : 'border-gray-200'
+                      className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${
+                        selectedImage === index ? "border-green-600" : "border-gray-200"
                       }`}
                     >
                       <img src={img} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
@@ -128,17 +123,28 @@ export default function ProductDetails() {
                 )}
               </div>
 
+              {/* Rating */}
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <FaStar
+                    key={i}
+                    className={`w-4 h-4 ${i < (product.rating || 0) ? "text-yellow-400" : "text-gray-300"}`}
+                  />
+                ))}
+                <span className="text-sm text-gray-500 ml-2">({product.reviews || 0} reviews)</span>
+              </div>
+
               <div className="flex items-center gap-4">
                 <div className="text-4xl font-bold text-green-600">
                   KSh {product.price?.toLocaleString()}
                 </div>
                 {product.stock !== undefined && (
-                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    product.stock > 0 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                  <div
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      product.stock > 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
                   </div>
                 )}
               </div>
@@ -152,9 +158,7 @@ export default function ProductDetails() {
 
               {/* Quantity Selector */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quantity
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center border border-gray-300 rounded-lg">
                     <button
@@ -165,28 +169,26 @@ export default function ProductDetails() {
                     </button>
                     <span className="px-4 py-3 font-semibold">{quantity}</span>
                     <button
-                      onClick={() => setQuantity(quantity + 1)}
+                      onClick={() => setQuantity(Math.min(product.stock || 999, quantity + 1))}
                       className="p-3 hover:bg-gray-100 transition-colors"
                     >
                       +
                     </button>
                   </div>
-                  <span className="text-sm text-gray-500">
-                    Max: {product.stock || 'Unlimited'}
-                  </span>
+                  <span className="text-sm text-gray-500">Max: {product.stock || "Unlimited"}</span>
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="flex gap-4">
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleAddToCart}
                   disabled={product.stock === 0}
                   className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center gap-2"
                 >
-                  <FaShoppingCart />
-                  Add to Cart
-                </button>
+                  <FaShoppingCart /> Add to Cart
+                </motion.button>
                 <button className="p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                   <FaHeart className="text-gray-600" />
                 </button>
@@ -205,15 +207,15 @@ export default function ProductDetails() {
             </div>
           </div>
 
-          {/* Downloadable Content Section */}
-          {product.downloadableFiles && product.downloadableFiles.length > 0 && (
-            <motion.div 
+          {/* Downloadable Content */}
+          {product.downloadableFiles?.length > 0 && (
+            <motion.div
               className="mt-12"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <DownloadableContent 
+              <DownloadableContent
                 files={product.downloadableFiles}
                 productName={product.name}
                 variant="card"

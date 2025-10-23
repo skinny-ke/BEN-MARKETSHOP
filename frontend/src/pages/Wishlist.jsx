@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { HeartIcon, ShoppingCartIcon, EyeIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
-import { useShop } from '../context/ShopContext';
 import WishlistButton from '../components/WishlistButton';
+import { useShop } from '../context/ShopContext';
 import toast from 'react-hot-toast';
 
 export default function Wishlist() {
@@ -13,31 +12,22 @@ export default function Wishlist() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadWishlist = () => {
-      try {
-        const savedWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-        setWishlist(savedWishlist);
-      } catch (error) {
-        console.error('Error loading wishlist:', error);
-        toast.error('Failed to load wishlist');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadWishlist();
+    try {
+      const savedWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+      setWishlist(savedWishlist);
+    } catch (error) {
+      console.error('Error loading wishlist:', error);
+      toast.error('Failed to load wishlist');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const removeFromWishlist = (productId) => {
-    try {
-      const updatedWishlist = wishlist.filter(item => item._id !== productId);
-      setWishlist(updatedWishlist);
-      localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
-      toast.success('Removed from wishlist');
-    } catch (error) {
-      console.error('Error removing from wishlist:', error);
-      toast.error('Failed to remove from wishlist');
-    }
+    const updatedWishlist = wishlist.filter(item => item._id !== productId);
+    setWishlist(updatedWishlist);
+    localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
+    toast.success('Removed from wishlist');
   };
 
   const addToCartFromWishlist = (product) => {
@@ -55,7 +45,7 @@ export default function Wishlist() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading wishlist...</p>
@@ -64,15 +54,15 @@ export default function Wishlist() {
     );
   }
 
-  if (wishlist.length === 0) {
+  if (!wishlist.length) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           className="text-center"
         >
-          <HeartIcon className="text-6xl text-gray-300 mx-auto mb-4" />
+          <HeartIcon className="mx-auto h-24 w-24 text-gray-300 mb-4" />
           <h2 className="text-2xl font-bold text-gray-600 mb-2">Your wishlist is empty</h2>
           <p className="text-gray-500 mb-6">Save items you love for later by clicking the heart icon.</p>
           <Link 
@@ -95,22 +85,20 @@ export default function Wishlist() {
           className="bg-white rounded-xl shadow-lg overflow-hidden"
         >
           {/* Header */}
-          <div className="bg-green-600 text-white p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold">My Wishlist</h1>
-                <p className="text-green-100 mt-1">
-                  {wishlist.length} item{wishlist.length !== 1 ? 's' : ''} saved
-                </p>
-              </div>
-              <button
-                onClick={clearWishlist}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-              >
-                <TrashIcon className="w-4 h-4" />
-                Clear All
-              </button>
+          <div className="bg-green-600 text-white p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold">My Wishlist</h1>
+              <p className="text-green-100 mt-1">
+                {wishlist.length} item{wishlist.length !== 1 ? 's' : ''} saved
+              </p>
             </div>
+            <button
+              onClick={clearWishlist}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            >
+              <TrashIcon className="w-4 h-4" />
+              Clear All
+            </button>
           </div>
 
           {/* Wishlist Items */}
@@ -121,8 +109,8 @@ export default function Wishlist() {
                   key={product._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group"
+                  transition={{ delay: index * 0.05 }}
+                  className="bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-lg overflow-hidden group"
                 >
                   <div className="relative">
                     <img 
@@ -206,28 +194,27 @@ export default function Wishlist() {
           </div>
 
           {/* Footer Actions */}
-          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-              <div className="text-sm text-gray-600">
-                {wishlist.length} item{wishlist.length !== 1 ? 's' : ''} in your wishlist
-              </div>
-              <div className="flex gap-3">
-                <Link
-                  to="/"
-                  className="bg-gray-100 text-gray-700 py-2 px-6 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Continue Shopping
-                </Link>
-                <button
-                  onClick={() => {
-                    wishlist.forEach(product => addToCartFromWishlist(product));
-                    toast.success('All items added to cart!');
-                  }}
-                  className="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  Add All to Cart
-                </button>
-              </div>
+          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-sm text-gray-600">
+              {wishlist.length} item{wishlist.length !== 1 ? 's' : ''} in your wishlist
+            </div>
+            <div className="flex gap-3">
+              <Link
+                to="/"
+                className="bg-gray-100 text-gray-700 py-2 px-6 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Continue Shopping
+              </Link>
+              <button
+                onClick={() => {
+                  wishlist.forEach(product => addToCartFromWishlist(product));
+                  toast.success('All items added to cart!');
+                }}
+                disabled={!wishlist.length}
+                className="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              >
+                Add All to Cart
+              </button>
             </div>
           </div>
         </motion.div>

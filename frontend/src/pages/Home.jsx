@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import ProductCard from "../components/ProductCard";
-import AdvancedSearch from "../components/AdvancedSearch";
 import EnhancedSearch from "../components/EnhancedSearch";
 import Quotes from "../components/Quotes";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -71,11 +70,28 @@ export default function Home() {
 
       {/* Enhanced Search Section */}
       <div className="container mx-auto px-4 py-8">
+        {/* Category Buttons */}
+        <div className="flex gap-2 flex-wrap my-4">
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                selectedCategory === cat
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Enhanced Search Component */}
         <EnhancedSearch 
           onSearch={setSearchTerm}
           onFilter={(filters) => {
             setSelectedCategory(filters.category || "all");
-            // Additional filtering logic can be added here
           }}
           products={products}
         />
@@ -85,7 +101,7 @@ export default function Home() {
           className="my-12"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.6 }}
         >
           <Quotes 
             variant="card" 
@@ -103,11 +119,15 @@ export default function Home() {
           </h2>
           
           {filteredProducts.length === 0 ? (
-            <div className="text-center py-12">
+            <motion.div
+              className="text-center py-12"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
               <div className="text-gray-400 text-6xl mb-4">🔍</div>
               <h3 className="text-xl font-semibold text-gray-600 mb-2">No products found</h3>
               <p className="text-gray-500">Try adjusting your search or filter criteria</p>
-            </div>
+            </motion.div>
           ) : (
             <motion.div 
               layout
@@ -118,7 +138,8 @@ export default function Home() {
                   key={product._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  layout
+                  transition={{ delay: index * 0.05 }}
                 >
                   <ProductCard product={product} />
                 </motion.div>

@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
-import { FaCreditCard, FaPhone, FaMapMarkerAlt, FaSpinner } from "react-icons/fa";
+import { 
+  FaCreditCard, FaPhone, FaMapMarkerAlt, FaSpinner, 
+  FaHeart, FaHeartBroken 
+} from "react-icons/fa";
 import { useUser } from "@clerk/clerk-react";
 import { useShop } from "../context/ShopContext";
 import { orderService, mpesaService } from "../api/services";
@@ -12,7 +15,28 @@ export default function Checkout() {
   const { user } = useUser();
   const [loading, setLoading] = useState(false);
   const [paymentStep, setPaymentStep] = useState('form'); // 'form', 'processing', 'success'
-  
+
+  // Wishlist logic
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('wishlist') || '[]');
+    } catch { return []; }
+  });
+
+  const toggleWishlist = (product) => {
+    const exist = wishlist.find(i => i._id === product._id);
+    let updated;
+    if (exist) {
+      updated = wishlist.filter(i => i._id !== product._id);
+      toast.success('Removed from wishlist');
+    } else {
+      updated = [...wishlist, product];
+      toast.success('Added to wishlist');
+    }
+    setWishlist(updated);
+    localStorage.setItem('wishlist', JSON.stringify(updated));
+  };
+
   const { register, handleSubmit, formState: { errors }, watch } = useForm({
     defaultValues: {
       phone: user?.phoneNumbers[0]?.phoneNumber || '',
@@ -52,7 +76,6 @@ export default function Checkout() {
       setLoading(true);
       setPaymentStep('processing');
 
-      // Create order
       const orderData = {
         items: cart.map(item => ({
           product: item._id,
@@ -65,14 +88,11 @@ export default function Checkout() {
       const orderResponse = await orderService.createOrder(orderData);
       const order = orderResponse.data;
 
-      // Initiate M-Pesa STK push
-      const mpesaData = {
+      await mpesaService.stkPush({
         amount: total,
         phone: data.phone,
         account: order._id
-      };
-
-      await mpesaService.stkPush(mpesaData);
+      });
       
       setPaymentStep('success');
       clearCart();
@@ -131,151 +151,169 @@ export default function Checkout() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-4xl mx-auto"
+          className="max-w-4xl mx-auto flex flex-col lg:flex-row gap-8"
         >
-          <h1 className="text-3xl font-bold text-gray-800 mb-8">Checkout</h1>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Checkout Form */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                <FaMapMarkerAlt className="text-green-600" />
-                Delivery Information
-              </h2>
-              
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number (M-Pesa)
-                  </label>
-                  <input
-                    {...register("phone", { 
-                      required: "Phone number is required",
-                      pattern: {
-                        value: /^254[0-9]{9}$/,
-                        message: "Enter valid Kenyan phone number (254xxxxxxxxx)"
-                      }
-                    })}
-                    type="tel"
-                    placeholder="254xxxxxxxxx"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                  {errors.phone && (
-                    <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
-                  )}
-                </div>
+          {/* Checkout Form */}
+          <div className="flex-1 bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+              <FaMapMarkerAlt className="text-green-600" />
+              Delivery Information
+            </h2>
+            
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone Number (M-Pesa)
+                </label>
+                <input
+                  {...register("phone", { 
+                    required: "Phone number is required",
+                    pattern: {
+                      value: /^254[0-9]{9}$/,
+                      message: "Enter valid Kenyan phone number (254xxxxxxxxx)"
+                    }
+                  })}
+                  type="tel"
+                  placeholder="254xxxxxxxxx"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+                {errors.phone && (
+                  <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+                )}
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address
-                  </label>
-                  <input
-                    {...register("address", { required: "Address is required" })}
-                    type="text"
-                    placeholder="Enter your address"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                  {errors.address && (
-                    <p className="mt-1 text-sm text-red-600">{errors.address.message}</p>
-                  )}
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address
+                </label>
+                <input
+                  {...register("address", { required: "Address is required" })}
+                  type="text"
+                  placeholder="Enter your address"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+                {errors.address && (
+                  <p className="mt-1 text-sm text-red-600">{errors.address.message}</p>
+                )}
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    City
-                  </label>
-                  <input
-                    {...register("city", { required: "City is required" })}
-                    type="text"
-                    placeholder="Enter your city"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                  {errors.city && (
-                    <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
-                  )}
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  City
+                </label>
+                <input
+                  {...register("city", { required: "City is required" })}
+                  type="text"
+                  placeholder="Enter your city"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+                {errors.city && (
+                  <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
+                )}
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Order Notes (Optional)
-                  </label>
-                  <textarea
-                    {...register("notes")}
-                    rows={3}
-                    placeholder="Any special instructions..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                </div>
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Order Notes (Optional)
+                </label>
+                <textarea
+                  {...register("notes")}
+                  rows={3}
+                  placeholder="Any special instructions..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+                <div className="absolute top-0 right-0 text-gray-400 text-xs mt-1 mr-1" title="Optional instructions">?</div>
+              </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center gap-2"
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <FaSpinner className="animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <FaCreditCard />
+                    Pay with M-Pesa
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* Order Summary */}
+          <div className="flex-1 bg-white rounded-xl shadow-lg p-6 lg:sticky lg:top-24">
+            <h2 className="text-xl font-semibold text-gray-800 mb-6">Order Summary</h2>
+            
+            <div className="space-y-4">
+              {cart.map((item) => (
+                <motion.div 
+                  key={item._id} 
+                  className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg"
+                  layout
                 >
-                  {loading ? (
-                    <>
-                      <FaSpinner className="animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <FaCreditCard />
-                      Pay with M-Pesa
-                    </>
-                  )}
-                </button>
-              </form>
+                  <img 
+                    src={item.image || '/placeholder.png'} 
+                    alt={item.name}
+                    className="w-16 h-16 object-cover rounded-lg"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-gray-800">{item.name}</h3>
+                      <button
+                        onClick={() => toggleWishlist(item)}
+                        className={`text-sm p-1 rounded ${
+                          wishlist.find(w => w._id === item._id)
+                            ? 'text-red-500 hover:bg-red-50'
+                            : 'text-gray-400 hover:bg-gray-100'
+                        }`}
+                        title={
+                          wishlist.find(w => w._id === item._id)
+                            ? 'Remove from wishlist'
+                            : 'Add to wishlist'
+                        }
+                      >
+                        {wishlist.find(w => w._id === item._id) ? <FaHeart /> : <FaHeartBroken />}
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-500">Qty: {item.qty || 1}</p>
+                  </div>
+                  <div className="text-right">
+                    <motion.p className="font-semibold text-gray-800" layout>
+                      KSh {((item.price || 0) * (item.qty || 1)).toLocaleString()}
+                    </motion.p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
 
-            {/* Order Summary */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Order Summary</h2>
-              
-              <div className="space-y-4">
-                {cart.map((item) => (
-                  <div key={item._id} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
-                    <img 
-                      src={item.image || '/placeholder.png'} 
-                      alt={item.name}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-800">{item.name}</h3>
-                      <p className="text-sm text-gray-500">Qty: {item.qty || 1}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-800">
-                        KSh {((item.price || 0) * (item.qty || 1)).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-600">Items ({itemCount})</span>
+                <span className="font-semibold">KSh {total.toLocaleString()}</span>
               </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-600">Delivery</span>
+                <span className="font-semibold text-green-600">Free</span>
+              </div>
+              <div className="flex justify-between items-center text-xl font-bold text-gray-800 pt-2 border-t border-gray-200">
+                <span>Total</span>
+                <span>KSh {total.toLocaleString()}</span>
+              </div>
+            </div>
 
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600">Items ({itemCount})</span>
-                  <span className="font-semibold">KSh {total.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600">Delivery</span>
-                  <span className="font-semibold text-green-600">Free</span>
-                </div>
-                <div className="flex justify-between items-center text-xl font-bold text-gray-800 pt-2 border-t border-gray-200">
-                  <span>Total</span>
-                  <span>KSh {total.toLocaleString()}</span>
-                </div>
+            <div className="mt-6 p-4 bg-green-50 rounded-lg">
+              <div className="flex items-center gap-2 text-green-800">
+                <FaPhone />
+                <span className="font-semibold">M-Pesa Payment</span>
               </div>
-
-              <div className="mt-6 p-4 bg-green-50 rounded-lg">
-                <div className="flex items-center gap-2 text-green-800">
-                  <FaPhone />
-                  <span className="font-semibold">M-Pesa Payment</span>
-                </div>
-                <p className="text-sm text-green-700 mt-1">
-                  You'll receive an M-Pesa prompt on {phone || 'your phone'} to complete payment.
-                </p>
-              </div>
+              <p className="text-sm text-green-700 mt-1">
+                You'll receive an M-Pesa prompt on {phone || 'your phone'} to complete payment.
+              </p>
             </div>
           </div>
         </motion.div>
