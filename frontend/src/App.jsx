@@ -5,8 +5,11 @@ import { SocketProvider } from "./context/SocketContext";
 import { ClerkProvider as CustomClerkProvider } from "./context/ClerkContext";
 import { setClerkTokenGetter } from "./api/axios";
 import Navbar from "./components/Navbar";
+import MobileNav from "./components/MobileNav";
 import Footer from "./components/Footer";
 import ChatButton from "./components/ChatButton";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import Toaster from "./components/Toaster";
 import Home from "./pages/Home";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
@@ -18,16 +21,18 @@ import Wishlist from "./pages/Wishlist";
 import OrderTracking from "./pages/OrderTracking";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import Profile from "./pages/Profile";
+import { initAnalytics } from "./services/analytics";
 
 // Get the Clerk publishable key from environment variables
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "pk_test_placeholder";
 
-// Component to set up token getter
+// Component to set up token getter and analytics
 const TokenSetup = () => {
   const { getToken } = useAuth();
   
   useEffect(() => {
     setClerkTokenGetter(getToken);
+    initAnalytics();
   }, [getToken]);
   
   return null;
@@ -41,6 +46,7 @@ function App() {
         <SocketProvider>
           <div className="flex flex-col min-h-screen">
             <Navbar />
+            <MobileNav />
             <main className="flex-grow">
               <Routes>
                 <Route path="/" element={<Home />} />
@@ -134,6 +140,12 @@ function App() {
             <SignedIn>
               <ChatButton />
             </SignedIn>
+            
+            {/* PWA Install Prompt */}
+            <PWAInstallPrompt />
+            
+            {/* Toast Notifications */}
+            <Toaster />
           </div>
         </SocketProvider>
       </CustomClerkProvider>

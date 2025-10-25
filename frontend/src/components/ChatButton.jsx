@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
+import { useSocket } from '../context/SocketContext';
 import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import ChatWindow from './ChatWindow';
 
 const ChatButton = ({ receiverId = null }) => {
   const { user } = useUser();
+  const { connectSocket, isConnected } = useSocket();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatId, setChatId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -12,6 +14,13 @@ const ChatButton = ({ receiverId = null }) => {
   // Default to admin/support user ID if no receiver specified
   const targetReceiverId = receiverId || 'admin';
   const currentUserId = user?.id;
+
+  // Auto-connect socket when component mounts
+  useEffect(() => {
+    if (user && !isConnected) {
+      connectSocket();
+    }
+  }, [user, isConnected, connectSocket]);
 
   const handleOpenChat = () => {
     setIsChatOpen(true);

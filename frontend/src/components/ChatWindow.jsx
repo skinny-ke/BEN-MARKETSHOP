@@ -98,7 +98,8 @@ const ChatWindow = ({ isOpen, onClose, chatId, receiverId, currentUserId, messag
       <div className="bg-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
         <div>
           <h3 className="font-semibold">Support Chat</h3>
-          <p className="text-sm text-blue-100">
+          <p className="text-sm text-blue-100 flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-yellow-400'}`}></span>
             {isConnected ? 'Connected' : 'Connecting...'}
           </p>
         </div>
@@ -112,6 +113,14 @@ const ChatWindow = ({ isOpen, onClose, chatId, receiverId, currentUserId, messag
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.length === 0 && (
+          <div className="flex justify-center">
+            <div className="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-sm">
+              <p>Welcome! How can we help you today?</p>
+            </div>
+          </div>
+        )}
+        
         {messages.map((msg) => (
           <div
             key={msg._id || msg.timestamp}
@@ -151,18 +160,24 @@ const ChatWindow = ({ isOpen, onClose, chatId, receiverId, currentUserId, messag
             type="text"
             value={message}
             onChange={handleTyping}
-            placeholder="Type your message..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder={isConnected ? "Type your message..." : "Connecting..."}
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
             disabled={!isConnected}
           />
           <button
             type="submit"
             disabled={!message.trim() || !isConnected}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title={!isConnected ? "Connecting..." : "Send message"}
           >
             <PaperAirplaneIcon className="h-5 w-5" />
           </button>
         </form>
+        {!isConnected && (
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Please wait while we connect you to support...
+          </p>
+        )}
       </div>
     </div>
   );

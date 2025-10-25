@@ -28,7 +28,9 @@
     "recharts": "^2.15.4",
     "socket.io-client": "^4.8.1",
     "sonner": "^2.0.7",
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "vite-plugin-pwa": "^1.1.0",
+    "workbox-window": "^7.3.0"
   },
   "devDependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",

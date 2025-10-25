@@ -22,12 +22,11 @@ export const SocketProvider = ({ children }) => {
     if (!user) return;
 
     // Initialize socket connection
-    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5001', {
-      autoConnect: false,
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const newSocket = io(API_URL, {
+      autoConnect: true,
       withCredentials: true,
-      auth: {
-        token: null // Will be set after connection
-      }
+      transports: ['websocket', 'polling']
     });
 
     newSocket.on('connect', async () => {
@@ -37,11 +36,25 @@ export const SocketProvider = ({ children }) => {
       // Join chat room with user ID
       if (user?.id) {
         newSocket.emit('joinChat', user.id);
+        console.log('👤 Joined chat room:', user.id);
       }
     });
 
-    newSocket.on('disconnect', () => {
-      console.log('🔌 Disconnected from server');
+    newSocket.on('connected', (data) => {
+      console.log('✅ Server confirmed connection:', data.message);
+    });
+
+    newSocket.on('joinedRoom', (data) => {
+      console.log('✅ Joined room successfully:', data.message);
+    });
+
+    newSocket.on('disconnect', (reason) => {
+      console.log('🔌 Disconnected from server:', reason);
+      setIsConnected(false);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
       setIsConnected(false);
     });
 
@@ -52,7 +65,9 @@ export const SocketProvider = ({ children }) => {
     setSocket(newSocket);
 
     return () => {
-      newSocket.close();
+      if (newSocket) {
+        newSocket.close();
+      }
     };
   }, [user]);
 

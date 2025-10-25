@@ -15,7 +15,7 @@ app.set('trust proxy', 1); // ✅ For Render/Netlify proxies
 // ==========================
 // 🧠 CONFIGURATION
 // ==========================
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // ==========================
@@ -153,10 +153,14 @@ const io = new Server(server, {
 io.on('connection', (socket) => {
   console.log(`🔌 User connected: ${socket.id}`);
 
+  // Send connection confirmation
+  socket.emit('connected', { message: 'Connected to server' });
+
   // Join chat room
   socket.on('joinChat', (userId) => {
     socket.join(userId);
     console.log(`👤 User ${userId} joined their chat room`);
+    socket.emit('joinedRoom', { room: userId, message: 'Joined chat room successfully' });
   });
 
   // Handle sending messages
