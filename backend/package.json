@@ -9,6 +9,7 @@
     "seed": "node seed/adminSeed.js && node seed/seedProducts.js"
   },
   "dependencies": {
+    "@clerk/backend": "^2.19.0",
     "axios": "^1.6.8",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.0",
@@ -22,6 +23,8 @@
     "mongoose": "^8.4.1",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
+    "posthog-node": "^5.10.3",
+    "resend": "^6.2.2",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
