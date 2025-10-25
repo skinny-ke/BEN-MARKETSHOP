@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FaPlus, FaEdit, FaTrash, FaEye, FaChartBar, FaBox, FaUsers, FaShoppingCart } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaEye, FaChartBar, FaBox, FaUsers, FaShoppingCart, FaComments } from "react-icons/fa";
 import { productService } from "../api/services";
 import { useShop } from "../context/ShopContext";
+import AdminChatDashboard from "../components/AdminChatDashboard";
 import toast from "react-hot-toast";
 
 export default function Admin() {
@@ -124,6 +125,7 @@ export default function Admin() {
                   { id: "dashboard", label: "Dashboard", icon: FaChartBar },
                   { id: "products", label: "Products", icon: FaBox },
                   { id: "orders", label: "Orders", icon: FaShoppingCart },
+                  { id: "chat", label: "Customer Chat", icon: FaComments },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -242,6 +244,14 @@ export default function Admin() {
                   ) : (
                     <div> {/* Future orders table goes here */} </div>
                   )}
+                </div>
+              )}
+
+              {/* Chat Tab */}
+              {activeTab === "chat" && (
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-6">Customer Support Chat</h2>
+                  <AdminChatDashboard />
                 </div>
               )}
 

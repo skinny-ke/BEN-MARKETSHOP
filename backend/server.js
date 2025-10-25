@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const connectDB = require('./db');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -88,6 +90,7 @@ app.use('/api/auth', require('./Routes/auth'));
 app.use('/api/mpesa', require('./Routes/mpesa'));
 app.use('/api/payment', require('./Routes/payment'));
 app.use('/api/auth/refresh', require('./Routes/auth_refresh'));
+app.use('/api/chats', require('./Routes/chat'));
 
 // ==========================
 // 💚 HEALTH & STATUS
@@ -128,11 +131,111 @@ app.use((err, req, res, next) => {
 });
 
 // ==========================
+// 🔌 SOCKET.IO SETUP
+// ==========================
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'https://ben-marketshop.vercel.app',
+      'https://ben-market.netlify.app',
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+});
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log(`🔌 User connected: ${socket.id}`);
+
+  // Join chat room
+  socket.on('joinChat', (userId) => {
+    socket.join(userId);
+    console.log(`👤 User ${userId} joined their chat room`);
+  });
+
+  // Handle sending messages
+  socket.on('sendMessage', async (data) => {
+    try {
+      const { chatId, senderId, content, receiverId } = data;
+      
+      // Import models
+      const Message = require('./Models/Message');
+      const Chat = require('./Models/Chat');
+      
+      // Create and save message to database
+      const message = new Message({
+        chatId,
+        senderId,
+        content,
+        messageType: 'text'
+      });
+      
+      await message.save();
+      await message.populate('senderId', 'name email');
+      
+      // Update chat's last message
+      await Chat.findByIdAndUpdate(chatId, {
+        lastMessage: content,
+        lastMessageTime: new Date()
+      });
+      
+      // Emit to receiver
+      socket.to(receiverId).emit('receiveMessage', {
+        _id: message._id,
+        chatId: message.chatId,
+        senderId: message.senderId,
+        content: message.content,
+        messageType: message.messageType,
+        isRead: message.isRead,
+        createdAt: message.createdAt,
+        timestamp: message.createdAt
+      });
+      
+      // Also emit to sender for confirmation
+      socket.emit('messageSent', {
+        _id: message._id,
+        chatId: message.chatId,
+        senderId: message.senderId,
+        content: message.content,
+        messageType: message.messageType,
+        isRead: message.isRead,
+        createdAt: message.createdAt,
+        timestamp: message.createdAt
+      });
+      
+      console.log(`💬 Message sent from ${senderId} to ${receiverId}`);
+    } catch (error) {
+      console.error('Error handling message:', error);
+      socket.emit('error', { message: 'Failed to send message' });
+    }
+  });
+
+  // Handle typing indicators
+  socket.on('typing', (data) => {
+    const { receiverId, isTyping } = data;
+    socket.to(receiverId).emit('userTyping', {
+      isTyping,
+      senderId: socket.userId
+    });
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log(`🔌 User disconnected: ${socket.id}`);
+  });
+});
+
+// ==========================
 // 🚀 SERVER START
 // ==========================
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
   console.log(`🌍 Environment: ${NODE_ENV}`);
+  console.log(`🔌 Socket.io server ready`);
 });
 
 process.on('SIGINT', () => {
