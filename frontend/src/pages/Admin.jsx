@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FaPlus, FaEdit, FaTrash, FaEye, FaChartBar, FaBox, FaUsers, FaShoppingCart, FaComments } from "react-icons/fa";
+import { useUser } from "@clerk/clerk-react";
+import { FaPlus, FaEdit, FaTrash, FaEye, FaChartBar, FaBox, FaUsers, FaShoppingCart, FaComments, FaUserCog } from "react-icons/fa";
 import { productService } from "../api/services";
-import { useShop } from "../context/ShopContext";
+import { useClerkContext } from "../context/ClerkContext";
 import AdminChatDashboard from "../components/AdminChatDashboard";
+import UserManagement from "../components/UserManagement";
 import toast from "react-hot-toast";
 
 export default function Admin() {
-  const { user } = useShop();
+  const { user: clerkUser } = useUser();
+  const { isAdmin, userRole, loading: authLoading } = useClerkContext();
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,11 +20,11 @@ export default function Admin() {
 
   // Redirect if not admin
   useEffect(() => {
-    if (user && user.role !== "admin") {
+    if (!authLoading && !isAdmin) {
       toast.error("Access denied. Admin privileges required.");
       window.location.href = "/";
     }
-  }, [user]);
+  }, [isAdmin, authLoading]);
 
   useEffect(() => {
     fetchData();
@@ -62,7 +65,18 @@ export default function Admin() {
     pendingOrders: orders.filter((order) => order.paymentStatus === "pending").length,
   };
 
-  if (!user || user.role !== "admin") {
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">Access denied. Admin privileges required.</p>
@@ -125,6 +139,7 @@ export default function Admin() {
                   { id: "dashboard", label: "Dashboard", icon: FaChartBar },
                   { id: "products", label: "Products", icon: FaBox },
                   { id: "orders", label: "Orders", icon: FaShoppingCart },
+                  { id: "users", label: "User Management", icon: FaUserCog },
                   { id: "chat", label: "Customer Chat", icon: FaComments },
                 ].map((tab) => (
                   <button
@@ -244,6 +259,13 @@ export default function Admin() {
                   ) : (
                     <div> {/* Future orders table goes here */} </div>
                   )}
+                </div>
+              )}
+
+              {/* Users Tab */}
+              {activeTab === "users" && (
+                <div>
+                  <UserManagement />
                 </div>
               )}
 

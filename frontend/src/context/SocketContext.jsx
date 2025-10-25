@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useUser, useAuth } from '@clerk/clerk-react';
 import { io } from 'socket.io-client';
 
 const SocketContext = createContext();
@@ -12,19 +13,31 @@ export const useSocket = () => {
 };
 
 export const SocketProvider = ({ children }) => {
+  const { user } = useUser();
+  const { getToken } = useAuth();
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    if (!user) return;
+
     // Initialize socket connection
     const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5001', {
       autoConnect: false,
       withCredentials: true,
+      auth: {
+        token: null // Will be set after connection
+      }
     });
 
-    newSocket.on('connect', () => {
+    newSocket.on('connect', async () => {
       console.log('🔌 Connected to server');
       setIsConnected(true);
+      
+      // Join chat room with user ID
+      if (user?.id) {
+        newSocket.emit('joinChat', user.id);
+      }
     });
 
     newSocket.on('disconnect', () => {
@@ -41,7 +54,7 @@ export const SocketProvider = ({ children }) => {
     return () => {
       newSocket.close();
     };
-  }, []);
+  }, [user]);
 
   const connectSocket = () => {
     if (socket && !isConnected) {

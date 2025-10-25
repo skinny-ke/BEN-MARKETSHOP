@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import ChatWindow from './ChatWindow';
 
-const ChatButton = ({ currentUserId, receiverId = null }) => {
+const ChatButton = ({ receiverId = null }) => {
+  const { user } = useUser();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatId, setChatId] = useState(null);
   const [messages, setMessages] = useState([]);
 
   // Default to admin/support user ID if no receiver specified
   const targetReceiverId = receiverId || 'admin';
+  const currentUserId = user?.id;
 
   const handleOpenChat = () => {
     setIsChatOpen(true);

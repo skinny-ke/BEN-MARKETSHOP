@@ -8,24 +8,24 @@ const {
   markAsRead,
   getAllChats
 } = require('../Controllers/chatController');
-const auth = require('../middleware/auth');
+const { clerkAuth, requireAdmin, requireAuth } = require('../middleware/clerkAuth');
 
 // Get or create chat with specific user
-router.get('/:userId', auth, getOrCreateChat);
+router.get('/:userId', clerkAuth, getOrCreateChat);
 
 // Get current user's chats
-router.get('/', auth, getUserChats);
+router.get('/', clerkAuth, getUserChats);
 
 // Get all chats (admin only)
-router.get('/admin/all', auth, getAllChats);
+router.get('/admin/all', clerkAuth, requireAdmin, getAllChats);
 
 // Get messages for a specific chat
-router.get('/messages/:chatId', auth, getChatMessages);
+router.get('/messages/:chatId', clerkAuth, getChatMessages);
 
 // Send a message
-router.post('/messages', auth, sendMessage);
+router.post('/messages', clerkAuth, sendMessage);
 
 // Mark messages as read
-router.put('/messages/:chatId/read', auth, markAsRead);
+router.put('/messages/:chatId/read', clerkAuth, markAsRead);
 
 module.exports = router;

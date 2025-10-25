@@ -9,12 +9,25 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Function to get Clerk token (will be set by components)
+let getClerkToken = null;
+
+export const setClerkTokenGetter = (tokenGetter) => {
+  getClerkToken = tokenGetter;
+};
+
+// Request interceptor to add Clerk auth token
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  async (config) => {
+    if (getClerkToken) {
+      try {
+        const token = await getClerkToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error('Error getting Clerk token:', error);
+      }
     }
     return config;
   },
@@ -23,35 +36,14 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle token refresh
+// Response interceptor to handle auth errors
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
-    
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
-      try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          const response = await axios.post(`${API_URL}/api/auth/refresh/refresh`, {
-            token: refreshToken
-          });
-          
-          const { token } = response.data;
-          localStorage.setItem('token', token);
-          
-          // Retry the original request
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-          return api(originalRequest);
-        }
-      } catch (refreshError) {
-        // Refresh failed, redirect to login
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
-      }
+    if (error.response?.status === 401) {
+      // Handle unauthorized access
+      console.error('Unauthorized access - please login again');
+      // Clerk will handle redirect to login
     }
     
     return Promise.reject(error);

@@ -1,8 +1,12 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 
 const UserSchema = new mongoose.Schema({
+  clerkId: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true
+  },
   name: {
     type: String,
     required: [true, 'Please enter your name'],
@@ -13,50 +17,58 @@ const UserSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
   },
-  password: {
-    type: String,
-    required: [true, 'Please enter your password'],
-    minlength: 6,
-  },
   role: {
     type: String,
     enum: ['user', 'admin'],
     default: 'user',
   },
-  refreshToken: {
+  profileImage: {
     type: String,
+    default: ''
   },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  lastLogin: {
+    type: Date,
+    default: Date.now
+  }
 }, { timestamps: true });
 
-// 🔐 Encrypt password before saving
-UserSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
+// Index for better query performance
+UserSchema.index({ clerkId: 1 });
+UserSchema.index({ email: 1 });
+UserSchema.index({ role: 1 });
 
-// 🔐 Compare password
-UserSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
-};
-
-// 🎫 Generate access token
-UserSchema.methods.generateAccessToken = function () {
-  return jwt.sign(
-    { id: this._id, email: this.email, role: this.role },
-    process.env.JWT_SECRET,
-    { expiresIn: '15m' }
-  );
-};
-
-// 🔁 Generate refresh token
-UserSchema.methods.generateRefreshToken = function () {
-  return jwt.sign(
-    { id: this._id },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: '7d' }
-  );
+// Static method to find or create user from Clerk data
+UserSchema.statics.findOrCreateFromClerk = async function(clerkUser) {
+  try {
+    let user = await this.findOne({ clerkId: clerkUser.id });
+    
+    if (!user) {
+      user = new this({
+        clerkId: clerkUser.id,
+        name: clerkUser.fullName || clerkUser.firstName + ' ' + clerkUser.lastName,
+        email: clerkUser.emailAddresses[0]?.emailAddress,
+        profileImage: clerkUser.imageUrl || '',
+        role: 'user' // Default role, can be updated by admin
+      });
+      await user.save();
+    } else {
+      // Update existing user data from Clerk
+      user.name = clerkUser.fullName || clerkUser.firstName + ' ' + clerkUser.lastName;
+      user.email = clerkUser.emailAddresses[0]?.emailAddress;
+      user.profileImage = clerkUser.imageUrl || '';
+      user.lastLogin = new Date();
+      await user.save();
+    }
+    
+    return user;
+  } catch (error) {
+    console.error('Error finding or creating user from Clerk:', error);
+    throw error;
+  }
 };
 
 module.exports = mongoose.model('User', UserSchema);

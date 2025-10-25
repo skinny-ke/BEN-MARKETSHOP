@@ -11,7 +11,7 @@ const getOrCreateChat = async (req, res) => {
     // Find existing chat between users
     let chat = await Chat.findOne({
       users: { $all: [currentUserId, userId] }
-    }).populate('users', 'name email');
+    }).populate('users', 'name email profileImage role');
 
     if (!chat) {
       // Create new chat
@@ -19,7 +19,7 @@ const getOrCreateChat = async (req, res) => {
         users: [currentUserId, userId]
       });
       await chat.save();
-      await chat.populate('users', 'name email');
+      await chat.populate('users', 'name email profileImage role');
     }
 
     res.json({
@@ -44,7 +44,7 @@ const getUserChats = async (req, res) => {
       users: userId,
       isActive: true
     })
-    .populate('users', 'name email')
+    .populate('users', 'name email profileImage role')
     .sort({ lastMessageTime: -1 });
 
     res.json({
@@ -80,7 +80,7 @@ const getChatMessages = async (req, res) => {
     }
 
     const messages = await Message.find({ chatId })
-      .populate('senderId', 'name email')
+      .populate('senderId', 'name email profileImage role')
       .sort({ createdAt: 1 });
 
     res.json({
@@ -124,7 +124,7 @@ const sendMessage = async (req, res) => {
     });
 
     await message.save();
-    await message.populate('senderId', 'name email');
+    await message.populate('senderId', 'name email profileImage role');
 
     // Update chat's last message
     await Chat.findByIdAndUpdate(chatId, {
@@ -188,7 +188,7 @@ const getAllChats = async (req, res) => {
     }
 
     const chats = await Chat.find({ isActive: true })
-      .populate('users', 'name email role')
+      .populate('users', 'name email profileImage role')
       .sort({ lastMessageTime: -1 });
 
     res.json({
