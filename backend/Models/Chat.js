@@ -1,41 +1,56 @@
+// filepath: /Models/Chat.js
 const mongoose = require('mongoose');
 
-const chatSchema = new mongoose.Schema({
-  users: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  }],
-  isActive: {
-    type: Boolean,
-    default: true
+const chatSchema = new mongoose.Schema(
+  {
+    users: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+      },
+    ],
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    lastMessage: {
+      type: String,
+      default: '',
+    },
+    lastMessageTime: {
+      type: Date,
+      default: Date.now,
+    },
+    type: {
+      type: String,
+      enum: ['private', 'group'],
+      default: 'private', // ✅ Future-proof for group chats
+    },
+    groupName: {
+      type: String,
+      default: '',
+    },
+    groupImage: {
+      type: String,
+      default: '',
+    },
   },
-  lastMessage: {
-    type: String,
-    default: ''
-  },
-  lastMessageTime: {
-    type: Date,
-    default: Date.now
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  {
+    timestamps: true, // ✅ Automatically adds createdAt & updatedAt
   }
-});
+);
 
-// Update the updatedAt field before saving
-chatSchema.pre('save', function(next) {
-  this.updatedAt = Date.now();
-  next();
-});
-
-// Index for better query performance
+// ✅ Indexes for better performance
 chatSchema.index({ users: 1 });
 chatSchema.index({ lastMessageTime: -1 });
+
+// ✅ Optional virtual for latest message (no conflict)
+chatSchema.virtual('latestMessage', {
+  ref: 'Message',
+  localField: '_id',
+  foreignField: 'chatId',
+  options: { sort: { createdAt: -1 }, limit: 1 },
+});
 
 module.exports = mongoose.model('Chat', chatSchema);
