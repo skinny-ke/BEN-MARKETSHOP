@@ -1,3 +1,4 @@
+/* filepath: /context/SocketContext.jsx */
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { io } from 'socket.io-client';
@@ -21,74 +22,55 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (!user) return;
 
-    // Initialize socket connection
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const newSocket = io(API_URL, {
-      autoConnect: true,
-      withCredentials: true,
-      transports: ['websocket', 'polling']
-    });
+    const connectSocket = async () => {
+      const token = await getToken();
 
-    newSocket.on('connect', async () => {
-      console.log('🔌 Connected to server');
-      setIsConnected(true);
-      
-      // Join chat room with user ID
-      if (user?.id) {
-        newSocket.emit('joinChat', user.id);
-        console.log('👤 Joined chat room:', user.id);
-      }
-    });
+      // Use environment variable for deployment
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-    newSocket.on('connected', (data) => {
-      console.log('✅ Server confirmed connection:', data.message);
-    });
+      const newSocket = io(API_URL, {
+        auth: { token },
+        autoConnect: true,
+        withCredentials: true,
+        transports: ['websocket', 'polling'],
+      });
 
-    newSocket.on('joinedRoom', (data) => {
-      console.log('✅ Joined room successfully:', data.message);
-    });
+      newSocket.on('connect', () => {
+        console.log('✅ Socket connected');
+        setIsConnected(true);
 
-    newSocket.on('disconnect', (reason) => {
-      console.log('🔌 Disconnected from server:', reason);
-      setIsConnected(false);
-    });
+        if (user?.id) {
+          newSocket.emit('joinChat', user.id);
+          console.log('👤 Joined chat room:', user.id);
+        }
+      });
 
-    newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
-      setIsConnected(false);
-    });
+      newSocket.on('disconnect', (reason) => {
+        console.warn('⚠️ Socket disconnected:', reason);
+        setIsConnected(false);
+      });
 
-    newSocket.on('error', (error) => {
-      console.error('Socket error:', error);
-    });
+      newSocket.on('connect_error', (err) => {
+        console.error('❌ Socket connection error:', err.message);
+        setIsConnected(false);
+      });
 
-    setSocket(newSocket);
+      newSocket.on('error', (err) => {
+        console.error('Socket error:', err);
+      });
 
-    return () => {
-      if (newSocket) {
-        newSocket.close();
-      }
+      setSocket(newSocket);
+
+      return () => {
+        newSocket.disconnect();
+        setIsConnected(false);
+      };
     };
-  }, [user]);
 
-  const connectSocket = () => {
-    if (socket && !isConnected) {
-      socket.connect();
-    }
-  };
+    connectSocket();
+  }, [user, getToken]);
 
-  const disconnectSocket = () => {
-    if (socket && isConnected) {
-      socket.disconnect();
-    }
-  };
-
-  const joinChat = (userId) => {
-    if (socket && isConnected) {
-      socket.emit('joinChat', userId);
-    }
-  };
-
+  // Core emit functions
   const sendMessage = (messageData) => {
     if (socket && isConnected) {
       socket.emit('sendMessage', messageData);
@@ -104,9 +86,6 @@ export const SocketProvider = ({ children }) => {
   const value = {
     socket,
     isConnected,
-    connectSocket,
-    disconnectSocket,
-    joinChat,
     sendMessage,
     sendTyping,
   };

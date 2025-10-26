@@ -1,70 +1,89 @@
 import axios from './axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+// ✅ Automatically detect correct backend URL (Render in production, localhost in dev)
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (window.location.hostname.includes('localhost')
+    ? 'http://localhost:5001'
+    : 'https://ben-market-shop.onrender.com');
 
 export const chatService = {
-  // Get or create chat with a user
+  /** ✅ Get or create chat with a user */
   getOrCreateChat: async (userId) => {
     try {
-      const response = await axios.get(`${API_URL}/api/chats/${userId}`);
+      const response = await axios.get(`${API_URL}/api/chats/${userId}`, {
+        withCredentials: true,
+      });
       return response.data;
     } catch (error) {
-      console.error('Error getting/creating chat:', error);
+      console.error('❌ Error getting/creating chat:', error);
       throw error;
     }
   },
 
-  // Get user's chats
+  /** ✅ Get user's chats */
   getUserChats: async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/chats`);
+      const response = await axios.get(`${API_URL}/api/chats`, {
+        withCredentials: true,
+      });
       return response.data;
     } catch (error) {
-      console.error('Error getting user chats:', error);
+      console.error('❌ Error getting user chats:', error);
       throw error;
     }
   },
 
-  // Get chat messages
+  /** ✅ Get messages from specific chat */
   getChatMessages: async (chatId) => {
     try {
-      const response = await axios.get(`${API_URL}/api/chats/messages/${chatId}`);
+      const response = await axios.get(`${API_URL}/api/chats/messages/${chatId}`, {
+        withCredentials: true,
+      });
       return response.data;
     } catch (error) {
-      console.error('Error getting chat messages:', error);
+      console.error('❌ Error getting chat messages:', error);
       throw error;
     }
   },
 
-  // Send message
+  /** ✅ Send a new message */
   sendMessage: async (messageData) => {
     try {
-      const response = await axios.post(`${API_URL}/api/chats/messages`, messageData);
+      const response = await axios.post(`${API_URL}/api/chats/messages`, messageData, {
+        withCredentials: true,
+      });
       return response.data;
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('❌ Error sending message:', error);
       throw error;
     }
   },
 
-  // Mark messages as read
+  /** ✅ Mark messages in a chat as read */
   markAsRead: async (chatId) => {
     try {
-      const response = await axios.put(`${API_URL}/api/chats/messages/${chatId}/read`);
+      const response = await axios.put(
+        `${API_URL}/api/chats/messages/${chatId}/read`,
+        {},
+        { withCredentials: true }
+      );
       return response.data;
     } catch (error) {
-      console.error('Error marking messages as read:', error);
+      console.error('❌ Error marking messages as read:', error);
       throw error;
     }
   },
 
-  // Get all chats (admin only)
+  /** ✅ Get all chats (admin only) */
   getAllChats: async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/chats/admin/all`);
+      const response = await axios.get(`${API_URL}/api/chats/admin/all`, {
+        withCredentials: true,
+      });
       return response.data;
     } catch (error) {
-      console.error('Error getting all chats:', error);
+      console.error('❌ Error getting all chats (admin):', error);
       throw error;
     }
   },

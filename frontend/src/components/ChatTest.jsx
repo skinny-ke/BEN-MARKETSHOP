@@ -3,73 +3,94 @@ import { useSocket } from '../context/SocketContext';
 import { useUser } from '@clerk/clerk-react';
 
 const ChatTest = () => {
-  const { socket, isConnected } = useSocket();
+  const { socket, isConnected, joinChat } = useSocket();
   const { user } = useUser();
   const [testMessage, setTestMessage] = useState('');
   const [logs, setLogs] = useState([]);
 
   const addLog = (message) => {
-    setLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
+    setLogs((prev) => [
+      ...prev,
+      `${new Date().toLocaleTimeString()}: ${message}`,
+    ]);
   };
 
+  /** ✅ Setup socket listeners */
   useEffect(() => {
-    if (socket) {
-      addLog('Socket instance created');
-      
-      socket.on('connect', () => {
-        addLog('Socket connected');
-      });
-      
-      socket.on('disconnect', () => {
-        addLog('Socket disconnected');
-      });
-      
-      socket.on('connected', (data) => {
-        addLog(`Server confirmation: ${data.message}`);
-      });
-      
-      socket.on('joinedRoom', (data) => {
-        addLog(`Room joined: ${data.message}`);
-      });
-    }
+    if (!socket) return;
+
+    addLog('Socket instance created');
+
+    socket.on('connect', () => addLog('✅ Socket connected'));
+    socket.on('disconnect', () => addLog('❌ Socket disconnected'));
+    socket.on('connected', (data) =>
+      addLog(`🔗 Server confirmation: ${data.message}`)
+    );
+    socket.on('joinedRoom', (data) =>
+      addLog(`🏠 Joined room: ${data.message}`)
+    );
+    socket.on('receiveMessage', (msg) =>
+      addLog(`💬 Received message: ${msg.content}`)
+    );
+
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('connected');
+      socket.off('joinedRoom');
+      socket.off('receiveMessage');
+    };
   }, [socket]);
 
+  /** 🟢 Auto join test room */
+  useEffect(() => {
+    if (socket && isConnected) {
+      joinChat('test-chat');
+      addLog('Joined test-chat room');
+    }
+  }, [socket, isConnected]);
+
+  /** 🧪 Send test message */
   const sendTestMessage = () => {
     if (socket && isConnected) {
       const messageData = {
         chatId: 'test-chat',
-        senderId: user?.id,
+        senderId: user?.id || 'guest',
+        receiverId: 'admin',
         content: testMessage,
-        receiverId: 'admin'
       };
-      
+
       socket.emit('sendMessage', messageData);
-      addLog(`Sent message: ${testMessage}`);
+      addLog(`🚀 Sent: ${testMessage}`);
       setTestMessage('');
     } else {
-      addLog('Cannot send message - not connected');
+      addLog('⚠️ Cannot send message — not connected');
     }
   };
 
   return (
     <div className="fixed top-4 right-4 w-96 bg-white border border-gray-300 rounded-lg shadow-lg p-4 z-50">
-      <h3 className="font-bold text-lg mb-4">Chat Debug</h3>
-      
-      <div className="mb-4">
-        <p className="text-sm">
-          <span className={`inline-block w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
+      <h3 className="font-bold text-lg mb-4">Chat Debug Panel</h3>
+
+      <div className="mb-3 text-sm">
+        <p>
+          <span
+            className={`inline-block w-2 h-2 rounded-full mr-2 ${
+              isConnected ? 'bg-green-500' : 'bg-red-500'
+            }`}
+          ></span>
           Status: {isConnected ? 'Connected' : 'Disconnected'}
         </p>
-        <p className="text-sm">User ID: {user?.id || 'Not logged in'}</p>
-        <p className="text-sm">Socket ID: {socket?.id || 'No socket'}</p>
+        <p>User ID: {user?.id || 'Not logged in'}</p>
+        <p>Socket ID: {socket?.id || 'N/A'}</p>
       </div>
-      
+
       <div className="mb-4">
         <input
           type="text"
           value={testMessage}
           onChange={(e) => setTestMessage(e.target.value)}
-          placeholder="Test message..."
+          placeholder="Type message..."
           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
         />
         <button
@@ -80,11 +101,11 @@ const ChatTest = () => {
           Send Test Message
         </button>
       </div>
-      
-      <div className="max-h-40 overflow-y-auto">
+
+      <div className="max-h-48 overflow-y-auto bg-gray-50 p-2 rounded">
         <h4 className="font-semibold text-sm mb-2">Logs:</h4>
-        {logs.map((log, index) => (
-          <div key={index} className="text-xs text-gray-600 mb-1">
+        {logs.map((log, i) => (
+          <div key={i} className="text-xs text-gray-600 mb-1">
             {log}
           </div>
         ))}
