@@ -1,15 +1,23 @@
 import { Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
-import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn, useAuth } from "@clerk/clerk-react";
+import {
+  ClerkProvider,
+  SignedIn,
+  SignedOut,
+  RedirectToSignIn,
+  useAuth,
+} from "@clerk/clerk-react";
 import { SocketProvider } from "./context/SocketContext";
 import { ClerkProvider as CustomClerkProvider } from "./context/ClerkContext";
 import { setClerkTokenGetter } from "./api/axios";
+
 import Navbar from "./components/Navbar";
 import MobileNav from "./components/MobileNav";
 import Footer from "./components/Footer";
 import ChatButton from "./components/ChatButton";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import Toaster from "./components/Toaster";
+
 import Home from "./pages/Home";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
@@ -23,18 +31,19 @@ import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import Profile from "./pages/Profile";
 import { initAnalytics } from "./services/analytics";
 
-// Get the Clerk publishable key from environment variables
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "pk_test_placeholder";
+// ✅ Clerk Publishable Key
+const clerkPubKey =
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "pk_test_placeholder";
 
-// Component to set up token getter and analytics
+// ✅ Setup for Clerk token + analytics
 const TokenSetup = () => {
   const { getToken } = useAuth();
-  
+
   useEffect(() => {
     setClerkTokenGetter(getToken);
     initAnalytics();
   }, [getToken]);
-  
+
   return null;
 };
 
@@ -43,114 +52,83 @@ function App() {
     <ClerkProvider publishableKey={clerkPubKey}>
       <CustomClerkProvider>
         <TokenSetup />
+
+        {/* ✅ Wrap everything with SocketProvider */}
         <SocketProvider>
-          <div className="flex flex-col min-h-screen">
+          <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950">
             <Navbar />
             <MobileNav />
+
             <main className="flex-grow">
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/product/:id" element={<ProductDetails />} />
                 <Route path="/cart" element={<Cart />} />
-                <Route 
-                  path="/checkout" 
+
+                <Route
+                  path="/checkout"
                   element={
-                    <>
-                      <SignedIn>
-                        <Checkout />
-                      </SignedIn>
-                      <SignedOut>
-                        <RedirectToSignIn />
-                      </SignedOut>
-                    </>
-                  } 
+                    <SignedIn>
+                      <Checkout />
+                    </SignedIn>
+                  }
                 />
+                <Route
+                  path="/admin"
+                  element={
+                    <SignedIn>
+                      <Admin />
+                    </SignedIn>
+                  }
+                />
+                <Route
+                  path="/wishlist"
+                  element={
+                    <SignedIn>
+                      <Wishlist />
+                    </SignedIn>
+                  }
+                />
+                <Route
+                  path="/track-order"
+                  element={
+                    <SignedIn>
+                      <OrderTracking />
+                    </SignedIn>
+                  }
+                />
+                <Route
+                  path="/analytics"
+                  element={
+                    <SignedIn>
+                      <AnalyticsDashboard />
+                    </SignedIn>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <SignedIn>
+                      <Profile />
+                    </SignedIn>
+                  }
+                />
+
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route 
-                  path="/admin" 
+
+                {/* Redirect any signed-out user trying to access protected routes */}
+                <Route
+                  path="*"
                   element={
-                    <>
-                      <SignedIn>
-                        <Admin />
-                      </SignedIn>
-                      <SignedOut>
-                        <RedirectToSignIn />
-                      </SignedOut>
-                    </>
-                  } 
-                />
-                <Route 
-                  path="/wishlist" 
-                  element={
-                    <>
-                      <SignedIn>
-                        <Wishlist />
-                      </SignedIn>
-                      <SignedOut>
-                        <RedirectToSignIn />
-                      </SignedOut>
-                    </>
-                  } 
-                />
-                <Route 
-                  path="/track-order" 
-                  element={
-                    <>
-                      <SignedIn>
-                        <OrderTracking />
-                      </SignedIn>
-                      <SignedOut>
-                        <RedirectToSignIn />
-                      </SignedOut>
-                    </>
-                  } 
-                />
-                <Route 
-                  path="/analytics" 
-                  element={
-                    <>
-                      <SignedIn>
-                        <AnalyticsDashboard />
-                      </SignedIn>
-                      <SignedOut>
-                        <RedirectToSignIn />
-                      </SignedOut>
-                    </>
-                  } 
-                />
-                <Route 
-                  path="/profile" 
-                  element={
-                    <>
-                      <SignedIn>
-                        <Profile />
-                      </SignedIn>
-                      <SignedOut>
-                        <RedirectToSignIn />
-                      </SignedOut>
-                    </>
-                  } 
+                    <SignedOut>
+                      <RedirectToSignIn />
+                    </SignedOut>
+                  }
                 />
               </Routes>
             </main>
-            <Footer />
-            
-            {/* Chat Button for all pages */}
-            <SignedIn>
-              <ChatButton />
-            </SignedIn>
-            
-            {/* PWA Install Prompt */}
-            <PWAInstallPrompt />
-            
-            {/* Toast Notifications */}
-            <Toaster />
-          </div>
-        </SocketProvider>
-      </CustomClerkProvider>
-    </ClerkProvider>
-  );
-}
 
-export default App;
+            <Footer />
+
+            {/

@@ -16,12 +16,14 @@ const ChatButton = ({ receiverId = null }) => {
   const currentUserId = user?.id;
   const targetReceiverId = receiverId || "admin";
 
-  /** 🟢 Auto-connect socket on mount */
+  /** 🟢 Connect socket when user logs in */
   useEffect(() => {
-    if (user && !isConnected) connectSocket();
+    if (user && !isConnected) {
+      connectSocket();
+    }
   }, [user, isConnected, connectSocket]);
 
-  /** 🟡 Load or create chat when opening */
+  /** 🟡 Open chat window + load chat + join room */
   const handleOpenChat = async () => {
     setIsChatOpen(true);
     if (!currentUserId) return;
@@ -29,23 +31,29 @@ const ChatButton = ({ receiverId = null }) => {
     try {
       const chat = await chatService.getOrCreateChat(targetReceiverId);
       setChatId(chat._id);
-      joinChat(chat._id); // join socket room
+
+      joinChat(chat._id);
+
       const chatMsgs = await chatService.getChatMessages(chat._id);
       setMessages(chatMsgs.messages || []);
     } catch (err) {
-      console.error("Error loading chat:", err);
+      console.error("❌ Error loading chat:", err);
     }
   };
 
   /** 🟣 Close chat window */
-  const handleCloseChat = () => setIsChatOpen(false);
+  const handleCloseChat = () => {
+    setIsChatOpen(false);
+  };
 
-  /** 🧩 Append new message locally */
-  const handleNewMessage = (newMsg) => setMessages((prev) => [...prev, newMsg]);
+  /** 🧩 Append new messages safely */
+  const handleNewMessage = (newMsg) => {
+    setMessages((prev) => [...prev, newMsg]);
+  };
 
-  /** 🔵 Listen for incoming messages via socket */
+  /** 🔵 Listen for messages via socket */
   useEffect(() => {
-    if (!socket || !chatId) return;
+    if (!socket) return;
 
     const handleReceiveMessage = (msg) => {
       if (msg.chatId === chatId) {
@@ -54,12 +62,13 @@ const ChatButton = ({ receiverId = null }) => {
     };
 
     socket.on("receiveMessage", handleReceiveMessage);
+
     return () => socket.off("receiveMessage", handleReceiveMessage);
   }, [socket, chatId]);
 
   return (
     <>
-      {/* Floating Chat Button */}
+      {/* 💬 Floating Chat Button */}
       <button
         onClick={handleOpenChat}
         className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors z-40"
@@ -68,7 +77,7 @@ const ChatButton = ({ receiverId = null }) => {
         <ChatBubbleLeftRightIcon className="h-6 w-6" />
       </button>
 
-      {/* Chat Window Component */}
+      {/* 💭 Chat Window */}
       <ChatWindow
         isOpen={isChatOpen}
         onClose={handleCloseChat}
