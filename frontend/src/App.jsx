@@ -117,7 +117,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
 
-                {/* Redirect any signed-out user trying to access protected routes */}
+                {/* Redirect signed-out users to sign in */}
                 <Route
                   path="*"
                   element={
@@ -131,4 +131,17 @@ function App() {
 
             <Footer />
 
-            {/
+            {/* ✅ Optional Chat Window (add later if needed) */}
+            {/* <ChatWindow /> */}
+
+            <ChatButton />
+            <PWAInstallPrompt />
+            <Toaster />
+          </div>
+        </SocketProvider>
+      </CustomClerkProvider>
+    </ClerkProvider>
+  );
+}
+
+export default App;
