@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.53.2",
+    "@clerk/clerk-react": "^5.53.3",
     "@clerk/themes": "^2.4.28",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",

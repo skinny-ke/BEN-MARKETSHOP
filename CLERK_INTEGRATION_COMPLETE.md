@@ -70,7 +70,7 @@ Handles events:
 - `withAdminProtection()` - HOC for admin-only pages
 
 #### 3. **Organization Support** (`frontend/src/App.jsx`)
-- Added `OrganizationProvider` wrapper
+- Added `` wrapper
 - Supports multi-organization workflows
 
 ## 🔐 Authentication Flow

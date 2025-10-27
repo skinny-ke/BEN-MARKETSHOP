@@ -90,5 +90,8 @@ export default defineConfig({
         secure: false,
       }
     }
+  },
+  optimizeDeps: {
+    include: ['@clerk/clerk-react'],
   }
 })

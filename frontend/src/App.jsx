@@ -6,7 +6,6 @@ import {
   SignedOut,
   RedirectToSignIn,
   useAuth,
-  OrganizationProvider,
 } from "@clerk/clerk-react";
 import { SocketProvider } from "./context/SocketContext";
 import { ClerkProvider as CustomClerkProvider } from "./context/ClerkContext";
@@ -56,11 +55,10 @@ const TokenSetup = () => {
 function App() {
   return (
     <ClerkProvider publishableKey={clerkPubKey}>
-      <OrganizationProvider>
-        <CustomClerkProvider>
-          <TokenSetup />
+      <CustomClerkProvider>
+        <TokenSetup />
 
-          <SocketProvider>
+        <SocketProvider>
           <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950">
             <Navbar />
             <MobileNav />
@@ -140,9 +138,8 @@ function App() {
             <PWAInstallPrompt />
             <Toaster />
           </div>
-          </SocketProvider>
-        </CustomClerkProvider>
-      </OrganizationProvider>
+        </SocketProvider>
+      </CustomClerkProvider>
     </ClerkProvider>
   );
 }
