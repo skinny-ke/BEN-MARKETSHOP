@@ -1,63 +1,127 @@
 const express = require('express');
 const router = express.Router();
-const Product = require('../Models/Product'); // we’ll create this next
-const auth = require('../middleware/auth');
+const Product = require('../Models/Product');
+const { clerkAuth, requireAdmin } = require('../middleware/clerkAuth');
 
-// ✅ GET all products (public)
+// ✅ GET all products (public - anyone can read)
 router.get('/', async (req, res) => {
   try {
     const products = await Product.find();
-    res.json(products);
+    res.json({
+      success: true,
+      count: products.length,
+      data: products
+    });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch products'
+    });
   }
 });
 
-// ✅ GET one product by ID
+// ✅ GET one product by ID (public)
 router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ msg: 'Product not found' });
-    res.json(product);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+    res.json({
+      success: true,
+      data: product
+    });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch product'
+    });
   }
 });
 
-// ✅ POST new product (protected)
-router.post('/', auth, async (req, res) => {
-  const { name, price, description, image, category, stock } = req.body;
+// ✅ POST new product (admin only)
+router.post('/', clerkAuth, requireAdmin, async (req, res) => {
   try {
-    const newProduct = new Product({ name, price, description, image, category, stock });
+    const { name, price, description, image, category, stock } = req.body;
+    
+    const newProduct = new Product({
+      name,
+      price,
+      description,
+      image,
+      category,
+      stock
+    });
+    
     const product = await newProduct.save();
-    res.json(product);
+    
+    res.json({
+      success: true,
+      data: product,
+      message: 'Product created successfully'
+    });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create product'
+    });
   }
 });
 
-// ✅ PUT update product (protected)
-router.put('/:id', auth, async (req, res) => {
+// ✅ PUT update product (admin only)
+router.put('/:id', clerkAuth, requireAdmin, async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(product);
+    
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: product,
+      message: 'Product updated successfully'
+    });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update product'
+    });
   }
 });
 
-// ✅ DELETE product (protected)
-router.delete('/:id', auth, async (req, res) => {
+// ✅ DELETE product (admin only)
+router.delete('/:id', clerkAuth, requireAdmin, async (req, res) => {
   try {
-    await Product.findByIdAndDelete(req.params.id);
-    res.json({ msg: 'Product deleted' });
+    const product = await Product.findByIdAndDelete(req.params.id);
+    
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Product deleted successfully'
+    });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete product'
+    });
   }
 });
 

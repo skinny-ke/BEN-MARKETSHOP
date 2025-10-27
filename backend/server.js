@@ -8,6 +8,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -82,6 +83,7 @@ app.use('/api/chats', require('./Routes/chat'));
 app.use('/api/users', require('./Routes/user'));
 app.use('/api/admin', require('./Routes/admin'));
 app.use('/api/clerk', require('./Routes/clerkWebhook'));
+app.use('/api/tracking', require('./Routes/tracking'));
 
 app.get('/health', (req, res) =>
   res.json({ status: 'OK', env: NODE_ENV, uptime: process.uptime() })
@@ -91,16 +93,10 @@ app.get('/', (req, res) =>
   res.send(`Ben Market API running in ${NODE_ENV} mode 🚀`)
 );
 
-app.use('*', (req, res) => res.status(404).json({ message: 'Route not found' }));
+app.use('*', (req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
 
-app.use((err, req, res, next) => {
-  console.error(`❗ [${req.method}] ${req.originalUrl} - ${err.message}`);
-  res.status(500).json({
-    success: false,
-    message:
-      NODE_ENV === 'development' ? err.message : 'Internal Server Error, please try again later.',
-  });
-});
+// Use global error handler
+app.use(errorHandler);
 
 // ==========================
 // 🔌 SOCKET.IO
@@ -130,39 +126,32 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
-  console.log(`🔌 User connected: ${socket.id}`);
+  console.log(`🟢 User connected: ${socket.id}`);
 
-  socket.emit('connected', { message: 'Connected to server' });
-
-  socket.on('joinChat', (userId) => {
-    socket.join(userId);
-    socket.emit('joinedRoom', { room: userId });
+  // Join room
+  socket.on('join_room', (roomId) => {
+    socket.join(roomId);
+    console.log(`👤 Socket ${socket.id} joined room: ${roomId}`);
   });
 
-  socket.on('sendMessage', async (data) => {
-    try {
-      const { chatId, senderId, content, receiverId } = data;
-      const Message = require('./Models/Message');
-      const Chat = require('./Models/Chat');
-
-      const message = new Message({ chatId, senderId, content, messageType: 'text' });
-      await message.save();
-      await message.populate('senderId', 'name email');
-
-      await Chat.findByIdAndUpdate(chatId, {
-        lastMessage: content,
-        lastMessageTime: new Date(),
-      });
-
-      io.to(receiverId).emit('receiveMessage', message);
-      socket.emit('messageSent', message);
-    } catch (err) {
-      console.error('💥 Message error:', err);
-      socket.emit('error', { message: 'Message send failed' });
-    }
+  // Send message
+  socket.on('send_message', (data) => {
+    const { roomId, message, senderId, senderName } = data;
+    
+    io.to(roomId).emit('receive_message', {
+      message,
+      senderId,
+      senderName,
+      timestamp: new Date(),
+      roomId
+    });
+    
+    console.log(`💬 Message sent in room ${roomId}`);
   });
 
-  socket.on('disconnect', () => console.log(`❌ Disconnected: ${socket.id}`));
+  socket.on('disconnect', () => {
+    console.log(`🔴 User disconnected: ${socket.id}`);
+  });
 });
 
 // ==========================

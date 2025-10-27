@@ -5,36 +5,98 @@ const User = require('../Models/User');
 const Product = require('../Models/Product');
 const Order = require('../Models/Order');
 
-// Get admin dashboard stats
-router.get('/dashboard', clerkAuth, requireAdmin, async (req, res) => {
+// Get admin dashboard overview
+router.get('/overview', clerkAuth, requireAdmin, async (req, res) => {
   try {
-    const [totalUsers, totalProducts, totalOrders, recentOrders] = await Promise.all([
+    const [totalUsers, activeUsers, totalProducts, totalOrders] = await Promise.all([
       User.countDocuments(),
+      User.countDocuments({ isActive: true }),
       Product.countDocuments(),
       Order.countDocuments(),
-      Order.find()
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .populate('user', 'name email')
-        .select('-user.password')
     ]);
-
-    const stats = {
-      users: totalUsers,
-      products: totalProducts,
-      orders: totalOrders,
-      recentOrders
-    };
 
     res.json({
       success: true,
-      data: stats
+      data: {
+        users: totalUsers,
+        activeUsers,
+        products: totalProducts,
+        orders: totalOrders
+      }
     });
   } catch (error) {
     console.error('Error fetching admin dashboard:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch admin dashboard data'
+    });
+  }
+});
+
+// Admin stats (daily/weekly)
+router.get('/stats', clerkAuth, requireAdmin, async (req, res) => {
+  try {
+    const { period = 'daily' } = req.query;
+    const now = new Date();
+    const startDate = new Date(now);
+    
+    if (period === 'weekly') {
+      startDate.setDate(now.getDate() - 7);
+    } else {
+      startDate.setHours(0, 0, 0, 0);
+    }
+
+    const [newUsers, newOrders, revenue] = await Promise.all([
+      User.countDocuments({ createdAt: { $gte: startDate } }),
+      Order.countDocuments({ createdAt: { $gte: startDate } }),
+      Order.aggregate([
+        { $match: { createdAt: { $gte: startDate } } },
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+      ])
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        period,
+        newUsers,
+        newOrders,
+        revenue: revenue[0]?.total || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch stats'
+    });
+  }
+});
+
+// Deactivate/Activate user
+router.put('/users/deactivate/:id', clerkAuth, requireAdmin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    user.isActive = !user.isActive;
+    await user.save();
+
+    res.json({
+      success: true,
+      data: user,
+      message: `User ${user.isActive ? 'activated' : 'deactivated'} successfully`
+    });
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update user status'
     });
   }
 });
