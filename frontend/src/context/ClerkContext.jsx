@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useUser, useAuth } from '@clerk/clerk-react';
-import { chatService } from '../api/chatService';
+import { useUser, useAuth, useOrganization } from '@clerk/clerk-react';
+import axios from '../api/axios';
 
 const ClerkContext = createContext();
 
@@ -13,23 +13,43 @@ export const useClerkContext = () => {
 };
 
 export const ClerkProvider = ({ children }) => {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded: userLoaded } = useUser();
   const { getToken } = useAuth();
+  const { organization, isLoaded: orgLoaded } = useOrganization();
   const [userRole, setUserRole] = useState('user');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Fetch user data from backend
   useEffect(() => {
-    if (isLoaded && user) {
-      // Get user role from Clerk metadata or backend
-      const role = user.publicMetadata?.role || 'user';
-      setUserRole(role);
-      setIsAdmin(role === 'admin');
-      setLoading(false);
-    } else if (isLoaded && !user) {
-      setLoading(false);
-    }
-  }, [isLoaded, user]);
+    const fetchUserData = async () => {
+      if (!user || !userLoaded) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const token = await getToken();
+        const response = await axios.get('/api/users/profile');
+        const data = response.data;
+        
+        setUserData(data);
+        setUserRole(data.role || 'user');
+        setIsAdmin(data.role === 'admin');
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        // Fallback to Clerk public metadata
+        const role = user.publicMetadata?.role || 'user';
+        setUserRole(role);
+        setIsAdmin(role === 'admin');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [user, userLoaded, getToken]);
 
   // Get auth token for API calls
   const getAuthToken = async () => {
@@ -48,10 +68,10 @@ export const ClerkProvider = ({ children }) => {
     }
     
     try {
-      const token = await getAuthToken();
-      // This would call an admin API endpoint to update user role
-      // Implementation depends on your backend admin endpoints
-      console.log('Updating user role:', userId, newRole);
+      const response = await axios.put(`/api/admin/users/${userId}/role`, {
+        role: newRole
+      });
+      return response.data;
     } catch (error) {
       console.error('Error updating user role:', error);
       throw error;
@@ -60,9 +80,12 @@ export const ClerkProvider = ({ children }) => {
 
   const value = {
     user,
-    isLoaded,
+    userData,
+    isLoaded: userLoaded && orgLoaded,
     userRole,
     isAdmin,
+    organization,
+    orgId: organization?.id || null,
     loading,
     getAuthToken,
     updateUserRole

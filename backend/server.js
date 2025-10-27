@@ -93,6 +93,7 @@ app.use('/api/auth/refresh', require('./Routes/auth_refresh'));
 app.use('/api/chats', require('./Routes/chat'));
 app.use('/api/users', require('./Routes/user'));
 app.use('/api', require('./Routes/clerkWebhook')); // Clerk webhook
+app.use('/api/admin', require('./Routes/admin')); // Admin routes
 
 // ==========================
 // 💚 HEALTH & STATUS

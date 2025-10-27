@@ -22,6 +22,11 @@ const UserSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user',
   },
+  orgId: {
+    type: String,
+    default: null,
+    index: true
+  },
   profileImage: {
     type: String,
     default: ''

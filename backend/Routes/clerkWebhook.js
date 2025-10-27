@@ -1,124 +1,116 @@
 const express = require('express');
-const crypto = require('crypto');
 const User = require('../Models/User');
 const router = express.Router();
 
-// Simple webhook verification
-const verifyWebhook = (payload, signature, secret) => {
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(payload)
-    .digest('hex');
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
-};
-
-// Clerk webhook endpoint
-router.post('/clerk/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+// ✅ Clerk webhook handler for user events
+router.post('/clerk/webhook', async (req, res) => {
   try {
-    // For development, skip webhook verification
-    const payload = JSON.parse(req.body.toString());
+    // Verify webhook signature in production
+    const event = req.body;
     
-    const { type, data } = payload;
+    console.log(`📨 Received Clerk webhook: ${event.type}`);
     
-    console.log(`Received Clerk webhook: ${type}`);
-    
-    switch (type) {
+    switch (event.type) {
       case 'user.created':
-        await handleUserCreated(data);
+        await handleUserCreated(event.data);
         break;
       case 'user.updated':
-        await handleUserUpdated(data);
+        await handleUserUpdated(event.data);
         break;
       case 'user.deleted':
-        await handleUserDeleted(data);
+        await handleUserDeleted(event.data.id);
+        break;
+      case 'organizationMembership.created':
+        await handleOrgMembership(event.data, true);
+        break;
+      case 'organizationMembership.deleted':
+        await handleOrgMembership(event.data, false);
         break;
       default:
-        console.log(`Unhandled webhook event: ${type}`);
+        console.log(`Unhandled event type: ${event.type}`);
     }
     
     res.status(200).json({ received: true });
   } catch (error) {
     console.error('Clerk webhook error:', error);
-    res.status(400).json({ error: 'Webhook verification failed' });
+    res.status(400).json({ error: 'Webhook processing failed' });
   }
 });
 
-// Handle user creation
+// Handle new user creation
 async function handleUserCreated(userData) {
   try {
-    const { id, email_addresses, first_name, last_name, image_url } = userData;
+    const existingUser = await User.findOne({ clerkId: userData.id });
     
-    // Check if user already exists
-    const existingUser = await User.findOne({ clerkId: id });
-    if (existingUser) {
-      console.log(`User ${id} already exists`);
-      return;
+    if (!existingUser) {
+      const newUser = await User.create({
+        clerkId: userData.id,
+        name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || userData.username || 'User',
+        email: userData.email_addresses[0]?.email_address,
+        role: 'user',
+        profileImage: userData.image_url || '',
+        isActive: true
+      });
+      
+      console.log(`✅ User created via webhook: ${newUser.name}`);
     }
-    
-    // Create new user with default role
-    const newUser = new User({
-      clerkId: id,
-      email: email_addresses[0]?.email_address,
-      firstName: first_name,
-      lastName: last_name,
-      imageUrl: image_url,
-      role: 'user', // Default role
-      isActive: true,
-      createdAt: new Date()
-    });
-    
-    await newUser.save();
-    console.log(`User created: ${id} with role: user`);
-    
   } catch (error) {
-    console.error('Error creating user:', error);
+    console.error('Error creating user from webhook:', error);
   }
 }
 
 // Handle user updates
 async function handleUserUpdated(userData) {
   try {
-    const { id, email_addresses, first_name, last_name, image_url, public_metadata } = userData;
+    const user = await User.findOne({ clerkId: userData.id });
     
-    const user = await User.findOne({ clerkId: id });
-    if (!user) {
-      console.log(`User ${id} not found for update`);
-      return;
+    if (user) {
+      user.name = `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || user.name;
+      user.email = userData.email_addresses[0]?.email_address || user.email;
+      user.profileImage = userData.image_url || user.profileImage;
+      await user.save();
+      
+      console.log(`✅ User updated via webhook: ${user.name}`);
     }
-    
-    // Update user data
-    user.email = email_addresses[0]?.email_address;
-    user.firstName = first_name;
-    user.lastName = last_name;
-    user.imageUrl = image_url;
-    
-    // Update role from public metadata if provided
-    if (public_metadata?.role) {
-      user.role = public_metadata.role;
-    }
-    
-    await user.save();
-    console.log(`User updated: ${id}`);
-    
   } catch (error) {
-    console.error('Error updating user:', error);
+    console.error('Error updating user from webhook:', error);
   }
 }
 
 // Handle user deletion
-async function handleUserDeleted(userData) {
+async function handleUserDeleted(clerkId) {
   try {
-    const { id } = userData;
+    const user = await User.findOne({ clerkId });
     
-    await User.findOneAndDelete({ clerkId: id });
-    console.log(`User deleted: ${id}`);
-    
+    if (user) {
+      user.isActive = false;
+      await user.save();
+      
+      console.log(`✅ User deactivated: ${clerkId}`);
+    }
   } catch (error) {
-    console.error('Error deleting user:', error);
+    console.error('Error deleting user from webhook:', error);
+  }
+}
+
+// Handle organization membership
+async function handleOrgMembership(data, isActive) {
+  try {
+    const clerkId = data.public_user_data?.user_id;
+    const orgId = data.organization?.id;
+    
+    if (clerkId && orgId) {
+      const user = await User.findOne({ clerkId });
+      
+      if (user) {
+        user.orgId = isActive ? orgId : null;
+        await user.save();
+        
+        console.log(`✅ User org membership updated: ${clerkId} → ${orgId}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error updating org membership:', error);
   }
 }
 

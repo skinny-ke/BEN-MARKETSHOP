@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/backend": "^2.19.0",
+    "@clerk/clerk-sdk-node": "^1.2.3",
     "axios": "^1.6.8",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.0",
