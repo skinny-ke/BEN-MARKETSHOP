@@ -31,9 +31,14 @@ import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import Profile from "./pages/Profile";
 import { initAnalytics } from "./services/analytics";
 
-// ✅ Clerk Publishable Key
-const clerkPubKey =
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "pk_test_placeholder";
+// ✅ Clerk Publishable Key (from .env)
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!clerkPubKey) {
+  throw new Error(
+    "Missing Clerk Publishable Key! Set VITE_CLERK_PUBLISHABLE_KEY in .env"
+  );
+}
 
 // ✅ Setup for Clerk token + analytics
 const TokenSetup = () => {
@@ -53,7 +58,6 @@ function App() {
       <CustomClerkProvider>
         <TokenSetup />
 
-        {/* ✅ Wrap everything with SocketProvider */}
         <SocketProvider>
           <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950">
             <Navbar />
@@ -117,7 +121,6 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
 
-                {/* Redirect signed-out users to sign in */}
                 <Route
                   path="*"
                   element={
@@ -130,9 +133,6 @@ function App() {
             </main>
 
             <Footer />
-
-            {/* ✅ Optional Chat Window (add later if needed) */}
-            {/* <ChatWindow /> */}
 
             <ChatButton />
             <PWAInstallPrompt />
