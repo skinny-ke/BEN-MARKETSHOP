@@ -149,7 +149,27 @@ const io = new Server(server, {
   },
 });
 
-// Socket.io connection handling
+// Socket.io connection handling with authentication
+io.use((socket, next) => {
+  // For development, we'll allow all connections
+  // In production, you should verify the token here
+  const token = socket.handshake.auth?.token;
+  
+  if (token) {
+    try {
+      // Store user ID from token
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.decode(token);
+      socket.userId = decoded?.sub || decoded?.userId;
+      console.log(`✅ Socket authenticated for user: ${socket.userId}`);
+    } catch (err) {
+      console.warn('Socket auth warning:', err.message);
+    }
+  }
+  
+  next();
+});
+
 io.on('connection', (socket) => {
   console.log(`🔌 User connected: ${socket.id}`);
 

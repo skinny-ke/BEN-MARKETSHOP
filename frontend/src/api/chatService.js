@@ -1,11 +1,7 @@
 import axios from './axios';
 
 // ✅ Automatically detect correct backend URL (Render in production, localhost in dev)
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  (window.location.hostname.includes('localhost')
-    ? 'http://localhost:5001'
-    : 'https://ben-market-shop.onrender.com');
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export const chatService = {
   /** ✅ Get or create chat with a user */

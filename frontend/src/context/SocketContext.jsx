@@ -9,19 +9,15 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  const connectSocket = useCallback(() => {
+  const connectSocket = useCallback(async () => {
     if (socket || !user) return;
 
-    // ✅ Use deployed backend URL from env
-    const backendUrl = import.meta.env.VITE_API_BASE_URL;
-    if (!backendUrl) {
-      console.error("⚠️ VITE_API_BASE_URL is not set!");
-      return;
-    }
+    // ✅ Use environment variable for deployment
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-    const newSocket = io(backendUrl, {
+    const newSocket = io(API_URL, {
       withCredentials: true,
-      transports: ["websocket"],
+      transports: ['websocket', 'polling'],
     });
 
     newSocket.on("connect", () => {
@@ -29,7 +25,7 @@ export const SocketProvider = ({ children }) => {
       setIsConnected(true);
 
       // Join personal room
-      newSocket.emit("joinUser", user.id);
+      newSocket.emit("joinChat", user.id);
       console.log("👤 Joined chat room:", user.id);
     });
 
@@ -74,8 +70,28 @@ export const SocketProvider = ({ children }) => {
     };
   }, [socket]);
 
+  const sendMessage = useCallback((messageData) => {
+    if (socket && isConnected) {
+      socket.emit('sendMessage', messageData);
+    }
+  }, [socket, isConnected]);
+
+  const sendTyping = useCallback((data) => {
+    if (socket && isConnected) {
+      socket.emit('typing', data);
+    }
+  }, [socket, isConnected]);
+
   return (
-    <SocketContext.Provider value={{ socket, isConnected, connectSocket, disconnectSocket, joinChat }}>
+    <SocketContext.Provider value={{ 
+      socket, 
+      isConnected, 
+      connectSocket, 
+      disconnectSocket, 
+      joinChat,
+      sendMessage,
+      sendTyping
+    }}>
       {children}
     </SocketContext.Provider>
   );

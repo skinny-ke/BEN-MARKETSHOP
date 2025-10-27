@@ -7,7 +7,7 @@ import ChatWindow from "./ChatWindow";
 
 const ChatButton = ({ receiverId = null }) => {
   const { user } = useUser();
-  const { socket, connectSocket, isConnected, joinChat } = useSocket();
+  const { socket, isConnected, joinChat } = useSocket();
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatId, setChatId] = useState(null);
@@ -16,24 +16,20 @@ const ChatButton = ({ receiverId = null }) => {
   const currentUserId = user?.id;
   const targetReceiverId = receiverId || "admin";
 
-  /** 🟢 Connect socket when user logs in */
-  useEffect(() => {
-    if (user && !isConnected) {
-      connectSocket();
-    }
-  }, [user, isConnected, connectSocket]);
-
   /** 🟡 Open chat window + load chat + join room */
   const handleOpenChat = async () => {
     setIsChatOpen(true);
     if (!currentUserId) return;
 
     try {
-      const chat = await chatService.getOrCreateChat(targetReceiverId);
+      const response = await chatService.getOrCreateChat(targetReceiverId);
+      const chat = response.chat || response; // Handle both response formats
       setChatId(chat._id);
 
+      // Join the chat room via socket
       joinChat(chat._id);
 
+      // Load existing messages
       const chatMsgs = await chatService.getChatMessages(chat._id);
       setMessages(chatMsgs.messages || []);
     } catch (err) {
