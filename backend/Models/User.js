@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
+  // Clerk users have this; local users (like admin) don’t
   clerkId: {
     type: String,
-    required: true,
     unique: true,
+    sparse: true, // ✅ allows null values without violating unique constraint
     index: true
   },
   name: {
@@ -16,6 +17,10 @@ const UserSchema = new mongoose.Schema({
     required: [true, 'Please enter your email'],
     unique: true,
     lowercase: true,
+  },
+  password: {
+    type: String, // only for local (non-Clerk) accounts
+    select: false
   },
   role: {
     type: String,
@@ -41,37 +46,40 @@ const UserSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Index for better query performance
+// 🔍 Indexes
 UserSchema.index({ clerkId: 1 });
 UserSchema.index({ email: 1 });
 UserSchema.index({ role: 1 });
 
-// Static method to find or create user from Clerk data
+// ✅ Static method to sync or create Clerk user
 UserSchema.statics.findOrCreateFromClerk = async function(clerkUser) {
   try {
     let user = await this.findOne({ clerkId: clerkUser.id });
-    
+
     if (!user) {
       user = new this({
         clerkId: clerkUser.id,
-        name: clerkUser.fullName || clerkUser.firstName + ' ' + clerkUser.lastName,
+        name:
+          clerkUser.fullName ||
+          `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
         email: clerkUser.emailAddresses[0]?.emailAddress,
         profileImage: clerkUser.imageUrl || '',
-        role: 'user' // Default role, can be updated by admin
+        role: 'user',
       });
       await user.save();
     } else {
-      // Update existing user data from Clerk
-      user.name = clerkUser.fullName || clerkUser.firstName + ' ' + clerkUser.lastName;
+      user.name =
+        clerkUser.fullName ||
+        `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim();
       user.email = clerkUser.emailAddresses[0]?.emailAddress;
       user.profileImage = clerkUser.imageUrl || '';
       user.lastLogin = new Date();
       await user.save();
     }
-    
+
     return user;
   } catch (error) {
-    console.error('Error finding or creating user from Clerk:', error);
+    console.error('Error syncing Clerk user:', error);
     throw error;
   }
 };

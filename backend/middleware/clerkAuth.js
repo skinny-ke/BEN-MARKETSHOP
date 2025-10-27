@@ -1,120 +1,120 @@
 const { createClerkClient } = require('@clerk/backend');
+const jwt = require('jsonwebtoken');
 const User = require('../Models/User');
 require('dotenv').config();
 
 // Initialize Clerk client
-const clerkClient = createClerkClient({ 
-  secretKey: process.env.CLERK_SECRET_KEY 
+const clerkClient = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY
 });
 
-// Middleware to verify Clerk JWT token
+// 🔐 Clerk + Local Auth Middleware
 const clerkAuth = async (req, res, next) => {
   try {
     const authHeader = req.header('Authorization') || '';
     const token = authHeader.replace('Bearer ', '').trim();
-    
+
     if (!token) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'No token, authorization denied' 
+        message: 'No token, authorization denied'
       });
     }
 
+    let user;
+
+    // ✅ 1. Try Clerk verification first
     try {
-      // Verify token with Clerk
       const decoded = await clerkClient.verifyToken(token);
       const clerkId = decoded.sub;
       const orgId = decoded.org_id || null;
-      
-      // Find user in database
-      let user = await User.findOne({ clerkId });
-      
+
+      user = await User.findOne({ clerkId });
+
       if (!user) {
-        // User doesn't exist, create them
-        // Get full user data from Clerk
         const clerkUser = await clerkClient.users.getUser(clerkId);
-        
+
         user = await User.create({
           clerkId,
-          name: clerkUser.firstName && clerkUser.lastName 
+          name: clerkUser.firstName && clerkUser.lastName
             ? `${clerkUser.firstName} ${clerkUser.lastName}`
             : clerkUser.username || 'User',
-          email: clerkUser.emailAddresses[0]?.emailAddress || `user-${clerkId}@unknown.com`,
+          email:
+            clerkUser.emailAddresses[0]?.emailAddress ||
+            `user-${clerkId}@unknown.com`,
           role: 'user',
           orgId: orgId,
           profileImage: clerkUser.imageUrl || '',
           isActive: true
         });
-        
-        console.log(`✅ Created new user: ${user.name} (${user.email})`);
+
+        console.log(`✅ Created new Clerk user: ${user.name}`);
       } else {
-        // Update existing user's last login
         user.lastLogin = new Date();
         if (orgId) user.orgId = orgId;
         await user.save();
       }
-      
-      // Attach user info to request
-      req.user = {
-        id: user._id.toString(),
-        clerkId: user.clerkId,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        orgId: user.orgId,
-        profileImage: user.profileImage
-      };
-      
-      next();
-    } catch (error) {
-      console.error('Token verification error:', error);
-      return res.status(401).json({ 
-        success: false,
-        message: 'Invalid or expired token' 
-      });
+    } catch (clerkError) {
+      // ✅ 2. Fallback to Local JWT (for manual admin users)
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'defaultSecret');
+        user = await User.findById(decoded.id);
+
+        if (!user) {
+          return res.status(401).json({
+            success: false,
+            message: 'Invalid local user token'
+          });
+        }
+      } catch (jwtError) {
+        console.error('Auth verification failed:', jwtError.message);
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid or expired token'
+        });
+      }
     }
+
+    // Attach user to request
+    req.user = {
+      id: user._id.toString(),
+      clerkId: user.clerkId || null,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      orgId: user.orgId || null,
+      profileImage: user.profileImage
+    };
+
+    next();
   } catch (err) {
-    console.error('Clerk auth error:', err);
-    return res.status(401).json({ 
+    console.error('Clerk/local auth error:', err);
+    return res.status(401).json({
       success: false,
-      message: 'Authentication failed' 
+      message: 'Authentication failed'
     });
   }
 };
 
-// Middleware to check if user is admin
+// ✅ Admin check
 const requireAdmin = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: 'Authentication required'
-    });
+    return res.status(401).json({ success: false, message: 'Authentication required' });
   }
-  
+
   if (req.user.role !== 'admin') {
-    return res.status(403).json({
-      success: false,
-      message: 'Admin privileges required'
-    });
+    return res.status(403).json({ success: false, message: 'Admin privileges required' });
   }
-  
+
   next();
 };
 
-// Middleware to check if user is authenticated (any role)
+// ✅ Generic auth check
 const requireAuth = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: 'Authentication required'
-    });
+    return res.status(401).json({ success: false, message: 'Authentication required' });
   }
-  
   next();
 };
 
-module.exports = {
-  clerkAuth,
-  requireAdmin,
-  requireAuth
-};
+module.exports = { clerkAuth, requireAdmin, requireAuth };
