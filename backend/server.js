@@ -84,6 +84,7 @@ app.use('/api/users', require('./Routes/user'));
 app.use('/api/admin', require('./Routes/admin'));
 app.use('/api/clerk', require('./Routes/clerkWebhook'));
 app.use('/api/tracking', require('./Routes/tracking'));
+app.use('/api/analytics', require('./Routes/analytics'));
 
 app.get('/health', (req, res) =>
   res.json({ status: 'OK', env: NODE_ENV, uptime: process.uptime() })

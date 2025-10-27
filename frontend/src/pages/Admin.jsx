@@ -33,10 +33,22 @@ export default function Admin() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      
+      // Fetch products
       const productsRes = await productService.getProducts();
-      setProducts(productsRes.data || []);
-      // Placeholder for orders fetch
-      setOrders([]); 
+      const productsData = productsRes.data?.data || productsRes.data || productsRes;
+      setProducts(Array.isArray(productsData) ? productsData : []);
+      
+      // Fetch orders from admin endpoint
+      const axios = require("../api/axios").default;
+      try {
+        const ordersRes = await axios.get('/api/admin/orders');
+        const ordersData = ordersRes.data?.data || ordersRes.data || [];
+        setOrders(Array.isArray(ordersData) ? ordersData : []);
+      } catch (orderError) {
+        console.error("Error fetching orders:", orderError);
+        setOrders([]);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load data");
@@ -49,11 +61,26 @@ export default function Admin() {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      await productService.deleteProduct(id);
-      setProducts(products.filter((p) => p._id !== id));
-      toast.success("Product deleted successfully");
+      const response = await productService.deleteProduct(id);
+      if (response.data.success !== false) {
+        setProducts(products.filter((p) => p._id !== id));
+        toast.success("Product deleted successfully");
+      }
     } catch (error) {
-      toast.error("Failed to delete product");
+      console.error("Delete error:", error);
+      toast.error(error.response?.data?.message || "Failed to delete product");
+    }
+  };
+
+  const handleUpdateProduct = async (id, updatedData) => {
+    try {
+      const response = await productService.updateProduct(id, updatedData);
+      if (response.data.success !== false) {
+        fetchData(); // Refresh list
+        toast.success("Product updated successfully");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update product");
     }
   };
 
