@@ -9,11 +9,17 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
-  /** 🟢 Connect socket when user logs in */
   const connectSocket = useCallback(() => {
     if (socket || !user) return;
 
-    const newSocket = io(import.meta.env.VITE_API_BASE_URL || "http://localhost:5000", {
+    // ✅ Use deployed backend URL from env
+    const backendUrl = import.meta.env.VITE_API_BASE_URL;
+    if (!backendUrl) {
+      console.error("⚠️ VITE_API_BASE_URL is not set!");
+      return;
+    }
+
+    const newSocket = io(backendUrl, {
       withCredentials: true,
       transports: ["websocket"],
     });
@@ -22,7 +28,7 @@ export const SocketProvider = ({ children }) => {
       console.log("✅ Socket connected");
       setIsConnected(true);
 
-      // Join personal room for direct messages
+      // Join personal room
       newSocket.emit("joinUser", user.id);
       console.log("👤 Joined chat room:", user.id);
     });
@@ -32,10 +38,13 @@ export const SocketProvider = ({ children }) => {
       setIsConnected(false);
     });
 
+    newSocket.on("connect_error", (err) => {
+      console.error("⚠️ Socket connection error:", err.message);
+    });
+
     setSocket(newSocket);
   }, [socket, user]);
 
-  /** 🔴 Disconnect socket when user logs out */
   const disconnectSocket = useCallback(() => {
     if (socket) {
       socket.disconnect();
@@ -44,7 +53,6 @@ export const SocketProvider = ({ children }) => {
     }
   }, [socket]);
 
-  /** 🔁 Join specific chat room (for a chatId) */
   const joinChat = useCallback(
     (chatId) => {
       if (socket && chatId) {
@@ -55,13 +63,11 @@ export const SocketProvider = ({ children }) => {
     [socket]
   );
 
-  /** 🧹 Handle user login/logout transitions */
   useEffect(() => {
     if (user && !socket) connectSocket();
     if (!user && socket) disconnectSocket();
   }, [user, socket, connectSocket, disconnectSocket]);
 
-  /** 🧩 Cleanup socket on unmount */
   useEffect(() => {
     return () => {
       if (socket) socket.disconnect();
