@@ -55,6 +55,7 @@ const clerkAuth = async (req, res, next) => {
         await user.save();
       }
     } catch (clerkError) {
+      console.log('⚠️ Clerk verification failed, trying JWT fallback...', clerkError.message);
       // ✅ 2. Fallback to Local JWT (for manual admin users)
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'defaultSecret');

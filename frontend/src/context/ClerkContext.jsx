@@ -31,12 +31,23 @@ export const ClerkProvider = ({ children }) => {
 
       try {
         const token = await getToken();
+        if (!token) {
+          // No token available, use Clerk data only
+          const role = user.publicMetadata?.role || 'user';
+          setUserRole(role);
+          setIsAdmin(role === 'admin');
+          setLoading(false);
+          return;
+        }
+
         const response = await axios.get('/api/users/profile');
-        const data = response.data;
         
-        setUserData(data);
-        setUserRole(data.role || 'user');
-        setIsAdmin(data.role === 'admin');
+        // Handle response.data.data structure
+        const userInfo = response.data.data || response.data;
+        
+        setUserData(userInfo);
+        setUserRole(userInfo.role || 'user');
+        setIsAdmin(userInfo.role === 'admin');
       } catch (error) {
         console.error('Error fetching user data:', error);
         // Fallback to Clerk public metadata
