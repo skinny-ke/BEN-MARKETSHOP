@@ -10,10 +10,10 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
-app.set('trust proxy', 1); // ✅ For Render/Netlify proxies
+app.set('trust proxy', 1); // ✅ Needed for Render/Cloudflare proxies
 
 // ==========================
-// 🧠 CONFIGURATION
+// ⚙️ CONFIG
 // ==========================
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -24,8 +24,9 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 app.use(helmet());
 app.use(compression());
 
+// Limit repeated requests
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 15 * 60 * 1000, // 15 minutes
   max: 200,
   message: 'Too many requests, please try again later.',
 });
@@ -61,11 +62,16 @@ app.use(
 );
 
 // ==========================
+// ⚡ CLERK WEBHOOK ROUTE (before body parser)
+// ==========================
+app.use('/api/clerk/webhook', require('./Routes/clerkWebhook')); // must come BEFORE express.json()
+
+// ==========================
 // 🧱 PARSERS & LOGGING
 // ==========================
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan('combined'));
+app.use(morgan(NODE_ENV === 'production' ? 'tiny' : 'dev'));
 
 // ==========================
 // 📦 DATABASE CONNECTION
@@ -92,8 +98,7 @@ app.use('/api/payment', require('./Routes/payment'));
 app.use('/api/auth/refresh', require('./Routes/auth_refresh'));
 app.use('/api/chats', require('./Routes/chat'));
 app.use('/api/users', require('./Routes/user'));
-app.use('/api', require('./Routes/clerkWebhook')); // Clerk webhook
-app.use('/api/admin', require('./Routes/admin')); // Admin routes
+app.use('/api/admin', require('./Routes/admin'));
 
 // ==========================
 // 💚 HEALTH & STATUS
@@ -109,11 +114,8 @@ app.get('/health', (req, res) => {
 
 app.get('/ping', (req, res) => res.send('pong 🏓'));
 
-// ==========================
-// 🏠 ROOT ROUTE
-// ==========================
 app.get('/', (req, res) => {
-  res.send(`Ben Market API is running in ${NODE_ENV} mode 🚀`);
+  res.send(`Ben Market API running in ${NODE_ENV} mode 🚀`);
 });
 
 // 🚫 404 handler
@@ -121,7 +123,7 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// ⚠️ ERROR HANDLING
+// ⚠️ ERROR HANDLER
 app.use((err, req, res, next) => {
   console.error(`❗ [${req.method}] ${req.originalUrl} - ${err.message}`);
   res.status(500).json({
@@ -139,136 +141,89 @@ app.use((err, req, res, next) => {
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: [
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'https://ben-marketshop.vercel.app',
-      'https://ben-market.netlify.app',
-    ],
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true,
   },
 });
 
-// Socket.io connection handling with authentication
 io.use((socket, next) => {
-  // For development, we'll allow all connections
-  // In production, you should verify the token here
   const token = socket.handshake.auth?.token;
-  
   if (token) {
     try {
-      // Store user ID from token
       const jwt = require('jsonwebtoken');
       const decoded = jwt.decode(token);
       socket.userId = decoded?.sub || decoded?.userId;
       console.log(`✅ Socket authenticated for user: ${socket.userId}`);
     } catch (err) {
-      console.warn('Socket auth warning:', err.message);
+      console.warn('⚠️ Socket auth warning:', err.message);
     }
   }
-  
   next();
 });
 
 io.on('connection', (socket) => {
   console.log(`🔌 User connected: ${socket.id}`);
-
-  // Send connection confirmation
   socket.emit('connected', { message: 'Connected to server' });
 
-  // Join chat room
   socket.on('joinChat', (userId) => {
     socket.join(userId);
     console.log(`👤 User ${userId} joined their chat room`);
-    socket.emit('joinedRoom', { room: userId, message: 'Joined chat room successfully' });
+    socket.emit('joinedRoom', { room: userId });
   });
 
-  // Handle sending messages
   socket.on('sendMessage', async (data) => {
     try {
       const { chatId, senderId, content, receiverId } = data;
-      
-      // Import models
       const Message = require('./Models/Message');
       const Chat = require('./Models/Chat');
-      
-      // Create and save message to database
-      const message = new Message({
+
+      const message = await Message.create({
         chatId,
         senderId,
         content,
-        messageType: 'text'
+        messageType: 'text',
       });
-      
-      await message.save();
-      await message.populate('senderId', 'name email');
-      
-      // Update chat's last message
       await Chat.findByIdAndUpdate(chatId, {
         lastMessage: content,
-        lastMessageTime: new Date()
+        lastMessageTime: new Date(),
       });
-      
-      // Emit to receiver
-      socket.to(receiverId).emit('receiveMessage', {
-        _id: message._id,
-        chatId: message.chatId,
-        senderId: message.senderId,
-        content: message.content,
-        messageType: message.messageType,
-        isRead: message.isRead,
-        createdAt: message.createdAt,
-        timestamp: message.createdAt
-      });
-      
-      // Also emit to sender for confirmation
-      socket.emit('messageSent', {
-        _id: message._id,
-        chatId: message.chatId,
-        senderId: message.senderId,
-        content: message.content,
-        messageType: message.messageType,
-        isRead: message.isRead,
-        createdAt: message.createdAt,
-        timestamp: message.createdAt
-      });
-      
+
+      io.to(receiverId).emit('receiveMessage', message);
+      socket.emit('messageSent', message);
+
       console.log(`💬 Message sent from ${senderId} to ${receiverId}`);
-    } catch (error) {
-      console.error('Error handling message:', error);
+    } catch (err) {
+      console.error('❌ Error sending message:', err);
       socket.emit('error', { message: 'Failed to send message' });
     }
   });
 
-  // Handle typing indicators
   socket.on('typing', (data) => {
-    const { receiverId, isTyping } = data;
-    socket.to(receiverId).emit('userTyping', {
-      isTyping,
-      senderId: socket.userId
+    io.to(data.receiverId).emit('userTyping', {
+      isTyping: data.isTyping,
+      senderId: socket.userId,
     });
   });
 
-  // Handle disconnection
   socket.on('disconnect', () => {
     console.log(`🔌 User disconnected: ${socket.id}`);
   });
 });
 
 // ==========================
-// 🚀 SERVER START
+// 🚀 START SERVER
 // ==========================
 server.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
   console.log(`🌍 Environment: ${NODE_ENV}`);
-  console.log(`🔌 Socket.io server ready`);
+  console.log(`🔌 Socket.io active`);
 });
 
 process.on('SIGINT', () => {
-  console.log('🛑 Server shutting down gracefully...');
+  console.log('🛑 Shutting down...');
   server.close(() => {
-    console.log('✅ Server closed. Bye!');
+    console.log('✅ Server closed.');
     process.exit(0);
   });
 });
