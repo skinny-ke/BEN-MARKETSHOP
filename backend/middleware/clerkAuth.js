@@ -22,7 +22,8 @@ const verifyClerkToken = async (token) => {
 const clerkAuth = async (req, res, next) => {
   try {
     const authHeader = req.header('Authorization') || '';
-    const token = authHeader.replace('Bearer ', '').trim();
+    const tokenHeader = req.header('Clerk-Auth-Token') || '';
+    const token = (authHeader.replace('Bearer ', '').trim()) || tokenHeader.trim();
 
     if (!token) {
       return res.status(401).json({

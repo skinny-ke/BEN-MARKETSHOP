@@ -194,7 +194,7 @@ app.set('io', io);
 
 io.use(async (socket, next) => {
   try {
-    const token = socket.handshake.auth?.token || socket.handshake.headers['authorization']?.replace('Bearer ', '');
+    const token = socket.handshake.auth?.token || socket.handshake.headers['clerk-auth-token'] || socket.handshake.headers['authorization']?.replace('Bearer ', '');
     if (!token) {
       console.warn('\x1b[33m⚠️ Socket missing token\x1b[0m');
       return next(new Error('Unauthorized'));

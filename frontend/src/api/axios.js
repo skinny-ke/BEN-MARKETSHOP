@@ -22,9 +22,16 @@ api.interceptors.request.use(
   async (config) => {
     if (getClerkToken) {
       try {
-        const token = await getClerkToken();
+        let token = null;
+        try {
+          token = await getClerkToken({ template: 'default' });
+        } catch (_) {}
+        if (!token) {
+          token = await getClerkToken();
+        }
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
+          config.headers['Clerk-Auth-Token'] = token;
         }
       } catch (error) {
         console.error('Error getting Clerk token:', error);
