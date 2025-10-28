@@ -1,19 +1,29 @@
 // frontend/middleware.ts
-import { authMiddleware } from "@clerk/nextjs";
+import { NextResponse } from "next/server";
 
-export default authMiddleware({
-  // Routes that anyone can access without authentication
-  publicRoutes: [
-    "/",                  // Homepage
-    "/manifest.json",     // PWA manifest
-    "/favicon.ico",       // Favicon
-    "/icons/:path*",      // Icons folder
-    "/logo.png",          // Logo file
-    "/health",            // Health check
-  ],
-});
+const PUBLIC_ROUTES = [
+  "/",
+  "/manifest.json",
+  "/favicon.ico",
+  "/icons",
+  "/logo.png",
+  "/health",
+];
+
+export function middleware(req) {
+  const url = req.nextUrl.pathname;
+
+  // Allow public routes
+  if (PUBLIC_ROUTES.some((path) => url.startsWith(path))) {
+    return NextResponse.next();
+  }
+
+  // Otherwise, optionally redirect to sign-in page
+  // return NextResponse.redirect(new URL("/sign-in", req.url));
+
+  return NextResponse.next();
+}
 
 export const config = {
-  // Intercept everything except _next/static and static files
   matcher: ["/((?!_next/static|.*\\..*).*)"],
 };
