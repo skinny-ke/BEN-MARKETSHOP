@@ -10,7 +10,11 @@ export const authService = {
 
 // Product services
 export const productService = {
-  getProducts: () => api.get('/api/products'),
+  getProducts: async () => {
+    const res = await api.get('/api/products');
+    // Backend returns { success, count, data: [...] }
+    return Array.isArray(res.data) ? res.data : (res.data?.data || []);
+  },
   getProduct: (id) => api.get(`/api/products/${id}`),
   createProduct: (productData) => api.post('/api/products', productData),
   updateProduct: (id, productData) => api.put(`/api/products/${id}`, productData),
