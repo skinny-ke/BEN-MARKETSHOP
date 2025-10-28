@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../Models/Order');
-const { clerkAuth } = require('../middleware/clerkAuth');
+const { clerkAuth, requireAdmin } = require('../middleware/clerkAuth');
 
 // Get order tracking by ID
 router.get('/:orderId', clerkAuth, async (req, res) => {
@@ -50,18 +50,12 @@ router.get('/:orderId', clerkAuth, async (req, res) => {
 });
 
 // Admin: Update order status and add tracking event
-router.post('/:orderId/update', clerkAuth, async (req, res) => {
+router.post('/:orderId/update', clerkAuth, requireAdmin, async (req, res) => {
   try {
     const { orderId } = req.params;
     const { status, trackingNumber, notes, description } = req.body;
     
-    // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Admin access required'
-      });
-    }
+    // requireAdmin handles role check
     
     const order = await Order.findById(orderId);
     

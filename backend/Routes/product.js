@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Product = require('../Models/Product');
 const { clerkAuth, requireAdmin } = require('../middleware/clerkAuth');
+const { body } = require('express-validator');
 
 // ✅ GET all products (public - anyone can read)
 router.get('/', async (req, res) => {
@@ -45,7 +46,19 @@ router.get('/:id', async (req, res) => {
 });
 
 // ✅ POST new product (admin only)
-router.post('/', clerkAuth, requireAdmin, async (req, res) => {
+router.post(
+  '/',
+  clerkAuth,
+  requireAdmin,
+  [
+    body('name').isString().isLength({ min: 2 }),
+    body('price').isFloat({ gt: 0 }),
+    body('description').optional().isString(),
+    body('image').optional().isURL().bail().isString(),
+    body('category').optional().isString(),
+    body('stock').optional().isInt({ min: 0 }),
+  ],
+  async (req, res) => {
   try {
     const { name, price, description, image, category, stock } = req.body;
     

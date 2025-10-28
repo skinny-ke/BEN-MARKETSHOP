@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { motion } from 'framer-motion';
 import { 
@@ -26,12 +26,16 @@ export default function AdminDashboard() {
     totalProducts: 0
   });
   const [recentOrders, setRecentOrders] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [statusFilter, setStatusFilter] = useState('all');
   const [salesData, setSalesData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [page, pageSize, statusFilter]);
 
   const fetchDashboardData = async () => {
     try {
@@ -43,12 +47,14 @@ export default function AdminDashboard() {
       setStats(statsData);
 
       // Fetch recent orders
-      const ordersResponse = await fetch('/api/orders?limit=10');
+      const params = new URLSearchParams({ page: String(page), limit: String(pageSize), ...(statusFilter !== 'all' ? { status: statusFilter } : {}) });
+      const ordersResponse = await fetch(`/api/admin/orders?${params.toString()}`);
       const ordersData = await ordersResponse.json();
-      setRecentOrders(ordersData.orders || []);
+      setRecentOrders(ordersData.data || ordersData.orders || []);
+      setTotalOrders(ordersData.count || ordersData.total || 0);
 
       // Fetch sales data for charts
-      const salesResponse = await fetch('/api/admin/analytics/sales');
+      const salesResponse = await fetch('/api/analytics/sales');
       const salesData = await salesResponse.json();
       setSalesData(salesData);
 
@@ -162,8 +168,21 @@ export default function AdminDashboard() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-lg shadow-md overflow-hidden"
         >
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
+            <div className="flex items-center gap-2">
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="border rounded px-2 py-1 text-sm">
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <select value={pageSize} onChange={e => setPageSize(Number(e.target.value))} className="border rounded px-2 py-1 text-sm">
+                {[10,20,50].map(n => <option key={n} value={n}>{n}/page</option>)}
+              </select>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -227,6 +246,15 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between text-sm">
+            <div>
+              Page {page} of {Math.max(1, Math.ceil(totalOrders / pageSize))}
+            </div>
+            <div className="flex gap-2">
+              <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))} className="px-3 py-1 border rounded disabled:opacity-50">Prev</button>
+              <button disabled={page >= Math.ceil(totalOrders / pageSize)} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border rounded disabled:opacity-50">Next</button>
+            </div>
           </div>
         </motion.div>
       </div>

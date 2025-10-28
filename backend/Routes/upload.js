@@ -2,12 +2,19 @@
 const express = require('express');
 const router = express.Router();
 const { getSignedUploadUrl, uploadImage } = require('../Controllers/uploadController');
-const auth = require('../middleware/auth');
+const { clerkAuth, requireAuth } = require('../middleware/clerkAuth');
+const { body } = require('express-validator');
 
 // Returns Cloudinary signed upload data if you prefer direct client uploads
-router.get('/signed', auth, getSignedUploadUrl);
+router.get('/signed', clerkAuth, requireAuth, getSignedUploadUrl);
 
 // Server-side upload endpoint (accepts base64 or multipart form)
-router.post('/image', auth, uploadImage);
+router.post(
+  '/image',
+  clerkAuth,
+  requireAuth,
+  [body('image').isString().isLength({ min: 10 })],
+  uploadImage
+);
 
 module.exports = router;

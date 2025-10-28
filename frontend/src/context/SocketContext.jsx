@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { io } from "socket.io-client";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 
 const SocketContext = createContext();
 
 export const SocketProvider = ({ children }) => {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
@@ -15,18 +16,30 @@ export const SocketProvider = ({ children }) => {
     // ✅ Use environment variable for deployment
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+    const token = await getToken();
     const newSocket = io(API_URL, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
+      auth: token ? { token } : undefined,
     });
 
     newSocket.on("connect", () => {
       console.log("✅ Socket connected");
       setIsConnected(true);
 
-      // Join personal room
-      newSocket.emit("joinChat", user.id);
-      console.log("👤 Joined chat room:", user.id);
+      console.log("👤 Authenticated as:", user.id);
+    });
+    newSocket.on('order_updated', (payload) => {
+      console.log('🧾 Order updated:', payload);
+      // TODO: surface to global notifications center
+    });
+
+    newSocket.on('server_status', (payload) => {
+      console.log('🩺 Server status:', payload);
+    });
+
+    newSocket.on('auth_error', (err) => {
+      console.warn('⚠️ Socket auth error:', err?.message || err);
     });
 
     newSocket.on("disconnect", () => {

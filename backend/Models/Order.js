@@ -37,6 +37,10 @@ const OrderSchema = new mongoose.Schema({
   notes: { type: String },
 }, { timestamps: true });
 
+// Indexes for performance
+OrderSchema.index({ user: 1, createdAt: -1 });
+OrderSchema.index({ trackingNumber: 1 }, { sparse: true });
+
 // Auto-create initial tracking event when order is created
 OrderSchema.pre('save', function(next) {
   if (this.isNew && this.timeline.length === 0) {

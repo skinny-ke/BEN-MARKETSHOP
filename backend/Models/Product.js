@@ -9,4 +9,9 @@ const ProductSchema = new mongoose.Schema({
   stock: { type: Number, default: 0 },
 }, { timestamps: true });
 
+// Indexes
+ProductSchema.index({ category: 1 });
+ProductSchema.index({ price: 1 });
+ProductSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Product', ProductSchema);

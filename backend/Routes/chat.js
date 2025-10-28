@@ -9,6 +9,7 @@ const {
   getAllChats
 } = require('../Controllers/chatController');
 const { clerkAuth, requireAdmin, requireAuth } = require('../middleware/clerkAuth');
+const { param, body } = require('express-validator');
 
 // Get or create chat with specific user
 router.get('/:userId', clerkAuth, getOrCreateChat);
@@ -23,7 +24,15 @@ router.get('/admin/all', clerkAuth, requireAdmin, getAllChats);
 router.get('/messages/:chatId', clerkAuth, getChatMessages);
 
 // Send a message
-router.post('/messages', clerkAuth, sendMessage);
+router.post(
+  '/messages',
+  clerkAuth,
+  [
+    body('chatId').isString().isLength({ min: 8 }),
+    body('message').isString().isLength({ min: 1, max: 2000 })
+  ],
+  sendMessage
+);
 
 // Mark messages as read
 router.put('/messages/:chatId/read', clerkAuth, markAsRead);

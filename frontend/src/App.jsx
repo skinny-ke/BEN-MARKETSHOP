@@ -27,6 +27,7 @@ import Register from "./pages/Register";
 import Admin from "./pages/Admin";
 import Wishlist from "./pages/Wishlist";
 import OrderTracking from "./pages/OrderTracking";
+import OrderReceipt from "./pages/OrderReceipt";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import Profile from "./pages/Profile";
 import { initAnalytics } from "./services/analytics";
@@ -114,6 +115,15 @@ function App() {
                   element={
                     <SignedIn>
                       <Profile />
+                    </SignedIn>
+                  }
+                />
+
+                <Route
+                  path="/orders/:id/receipt"
+                  element={
+                    <SignedIn>
+                      <OrderReceipt />
                     </SignedIn>
                   }
                 />

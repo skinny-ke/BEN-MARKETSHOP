@@ -22,6 +22,19 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // 🛡 SECURITY & PERFORMANCE
 // ==========================
 app.use(helmet());
+// Content Security Policy for production
+app.use(helmet.contentSecurityPolicy({
+  useDefaults: true,
+  directives: {
+    "default-src": ["'self'"],
+    "script-src": ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://*.clerk.com"],
+    "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
+    "connect-src": ["'self'", "https://*.clerk.com", "wss:", "https:", "http:"],
+    "font-src": ["'self'", "https://fonts.gstatic.com"],
+    "frame-src": ["'self'", "https://*.clerk.com"],
+  }
+}));
 app.use(compression());
 
 app.use(
@@ -31,6 +44,12 @@ app.use(
     message: 'Too many requests, please try again later.',
   })
 );
+
+// Tighter limits on sensitive endpoints
+app.use(['/api/upload', '/api/payment', '/api/auth'], rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 60,
+}));
 
 // ==========================
 // 🌍 CORS CONFIG
@@ -169,6 +188,13 @@ io.use(async (socket, next) => {
 
 io.on('connection', (socket) => {
   console.log(`\x1b[36m🟢 Socket connected\x1b[0m id=${socket.id} user=${socket.userId || 'anon'}`);
+
+  // Join personal room and admin room if applicable
+  if (socket.userId) {
+    socket.join(socket.userId);
+  }
+  // Simple admin detection via handshake query (best via DB in handlers)
+  // Socket-level role checks are enforced in route handlers too
 
   // Join room
   socket.on('join_room', (roomId) => {
