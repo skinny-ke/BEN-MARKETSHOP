@@ -161,6 +161,9 @@ const io = new Server(server, {
   },
 });
 
+// Expose io for controllers to emit events
+app.set('io', io);
+
 io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth?.token || socket.handshake.headers['authorization']?.replace('Bearer ', '');

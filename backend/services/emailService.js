@@ -1,11 +1,16 @@
 const { Resend } = require('resend');
 require('dotenv').config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const hasApiKey = Boolean(process.env.RESEND_API_KEY);
+const resend = hasApiKey ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // Send order confirmation email
 async function sendOrderConfirmation(order, user) {
   try {
+    if (!resend) {
+      console.warn('RESEND_API_KEY missing; skipping sendOrderConfirmation');
+      return true;
+    }
     const { data, error } = await resend.emails.send({
       from: process.env.FROM_EMAIL || 'BenMarket <noreply@benmarket.com>',
       to: [user.email],
@@ -81,6 +86,10 @@ async function sendOrderConfirmation(order, user) {
 // Send payment success notification
 async function sendPaymentSuccess(order, user) {
   try {
+    if (!resend) {
+      console.warn('RESEND_API_KEY missing; skipping sendPaymentSuccess');
+      return true;
+    }
     const { data, error } = await resend.emails.send({
       from: process.env.FROM_EMAIL || 'BenMarket <noreply@benmarket.com>',
       to: [user.email],
@@ -141,6 +150,10 @@ async function sendPaymentSuccess(order, user) {
 // Send welcome email to new users
 async function sendWelcomeEmail(user) {
   try {
+    if (!resend) {
+      console.warn('RESEND_API_KEY missing; skipping sendWelcomeEmail');
+      return true;
+    }
     const { data, error } = await resend.emails.send({
       from: process.env.FROM_EMAIL || 'BenMarket <noreply@benmarket.com>',
       to: [user.email],
