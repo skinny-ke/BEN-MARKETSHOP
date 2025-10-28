@@ -11,9 +11,24 @@ const rateLimit = require('express-rate-limit');
 const errorHandler = require('./middleware/errorHandler');
 const path = require('path');
 const { verifyClerkToken } = require('./middleware/clerkAuth');
+const winston = require('winston');
+const client = require('prom-client');
+const User = require('./Models/User');
 
 const app = express();
 app.set('trust proxy', 1);
+// ==========================
+// 📝 LOGGER (Winston)
+// ==========================
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.printf(({ level, message, timestamp }) => `${timestamp} [${level.toUpperCase()}] ${message}`)
+  ),
+  transports: [new winston.transports.Console()],
+});
+
 
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -98,6 +113,19 @@ app.use(morgan('combined'));
 // 📄 STATIC FILES (manifest.json must be public, bypass any auth)
 // ==========================
 app.use(express.static('public'));
+
+// ==========================
+// 📈 METRICS (Prometheus)
+// ==========================
+client.collectDefaultMetrics();
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', client.register.contentType);
+    res.end(await client.register.metrics());
+  } catch (e) {
+    res.status(500).end(e.message);
+  }
+});
 
 // ==========================
 // 📦 DATABASE
@@ -196,8 +224,17 @@ io.on('connection', (socket) => {
   if (socket.userId) {
     socket.join(socket.userId);
   }
-  // Simple admin detection via handshake query (best via DB in handlers)
-  // Socket-level role checks are enforced in route handlers too
+  // Admin room join by checking DB role
+  (async () => {
+    try {
+      if (!socket.userId) return;
+      const dbUser = await User.findOne({ clerkId: socket.userId }).select('role');
+      if (dbUser && dbUser.role === 'admin') {
+        socket.join('admins');
+        console.log(`👑 Admin joined admin room: ${socket.userId}`);
+      }
+    } catch (_) {}
+  })();
 
   // Join room
   socket.on('join_room', (roomId) => {

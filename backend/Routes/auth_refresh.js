@@ -3,9 +3,10 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../Models/User');
+const { clerkAuth, requireAdmin } = require('../middleware/clerkAuth');
 
-// refresh token endpoint (simple)
-router.post('/refresh', async (req, res) => {
+// Deprecated: kept for maintenance use only (admin)
+router.post('/refresh', clerkAuth, requireAdmin, async (req, res) => {
   try {
     const { token } = req.body;
     if (!token) return res.status(400).json({ message: 'Token required' });

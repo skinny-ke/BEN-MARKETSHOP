@@ -4,6 +4,7 @@ const { clerkAuth, requireAdmin } = require('../middleware/clerkAuth');
 const User = require('../Models/User');
 const Product = require('../Models/Product');
 const Order = require('../Models/Order');
+const { query } = require('express-validator');
 
 // Get admin dashboard overview
 router.get('/overview', clerkAuth, requireAdmin, async (req, res) => {
@@ -197,16 +198,23 @@ router.put('/users/:userId/deactivate', clerkAuth, requireAdmin, async (req, res
 // Get all orders (admin only)
 router.get('/orders', clerkAuth, requireAdmin, async (req, res) => {
   try {
-    const orders = await Order.find()
-      .populate('user', 'name email')
-      .populate('items.product')
-      .sort({ createdAt: -1 });
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+    const match = {};
+    if (req.query.status) match.status = req.query.status;
 
-    res.json({
-      success: true,
-      count: orders.length,
-      data: orders
-    });
+    const [orders, total] = await Promise.all([
+      Order.find(match)
+        .populate('user', 'name email')
+        .populate('items.product')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Order.countDocuments(match),
+    ]);
+
+    res.json({ success: true, data: orders, count: total, page, limit });
   } catch (error) {
     console.error('Error fetching orders:', error);
     res.status(500).json({
