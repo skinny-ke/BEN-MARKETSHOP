@@ -9,6 +9,8 @@ const morgan = require('morgan');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const errorHandler = require('./middleware/errorHandler');
+const path = require('path');
+const { verifyClerkToken } = require('./middleware/clerkAuth');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -33,28 +35,50 @@ app.use(
 // ==========================
 // 🌍 CORS CONFIG
 // ==========================
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const allowedOrigins = [
   'http://localhost:5173',
-  'http://localhost:5174',
   'https://ben-marketshop.vercel.app',
-  'https://ben-market.netlify.app',
+  'https://ben-marketshop-ijn3wow1c-skinny-kes-projects.vercel.app',
+  FRONTEND_URL,
 ];
 
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      if (!origin || allowedOrigins.includes(origin) || origin.includes('onrender.com'))
-        return cb(null, true);
-      console.warn(`🚫 Blocked CORS from ${origin}`);
-      cb(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: (origin, cb) => {
+    const isAllowed =
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      (new URL(origin).hostname || '').includes('onrender.com') ||
+      (new URL(origin).hostname || '').includes('cloudflare.app');
+
+    if (isAllowed) return cb(null, true);
+
+    console.warn(`\x1b[31m🚫 Blocked CORS\x1b[0m from ${origin}`);
+    return cb(null, false); // do not crash server
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'Clerk-Auth-Token',
+    'Origin',
+    'Accept',
+  ],
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('combined'));
+
+// ==========================
+// 📄 STATIC FILES (manifest.json must be public, bypass any auth)
+// ==========================
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ==========================
 // 📦 DATABASE
@@ -105,34 +129,45 @@ app.use(errorHandler);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
-    methods: ['GET', 'POST'],
+    origin: corsOptions.origin,
+    methods: corsOptions.methods,
     credentials: true,
+    allowedHeaders: corsOptions.allowedHeaders,
   },
 });
 
-io.use((socket, next) => {
-  const token = socket.handshake.auth?.token;
-  if (token) {
-    try {
-      const jwt = require('jsonwebtoken');
-      const decoded = jwt.decode(token);
-      socket.userId = decoded?.sub || decoded?.userId;
-      console.log(`✅ Socket authenticated for user ${socket.userId}`);
-    } catch (e) {
-      console.warn('⚠️ Invalid socket token');
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token || socket.handshake.headers['authorization']?.replace('Bearer ', '');
+    if (!token) {
+      console.warn('\x1b[33m⚠️ Socket missing token\x1b[0m');
+      return next(new Error('Unauthorized'));
     }
+    const decoded = await verifyClerkToken(token);
+    socket.userId = decoded?.sub || decoded?.userId || null;
+    if (!socket.userId) {
+      console.warn('\x1b[33m⚠️ Socket token verified but no user id\x1b[0m');
+      return next(new Error('Unauthorized'));
+    }
+    console.log(`\x1b[32m✅ Socket authenticated\x1b[0m user=${socket.userId}`);
+    return next();
+  } catch (e) {
+    console.warn(`\x1b[31m⚠️ Socket auth failed\x1b[0m: ${e.message}`);
+    try {
+      socket.emit('auth_error', { message: 'Authentication failed. Disconnecting.' });
+      socket.disconnect(true);
+    } catch (_) {}
+    return next(new Error('Unauthorized'));
   }
-  next();
 });
 
 io.on('connection', (socket) => {
-  console.log(`🟢 User connected: ${socket.id}`);
+  console.log(`\x1b[36m🟢 Socket connected\x1b[0m id=${socket.id} user=${socket.userId || 'anon'}`);
 
   // Join room
   socket.on('join_room', (roomId) => {
     socket.join(roomId);
-    console.log(`👤 Socket ${socket.id} joined room: ${roomId}`);
+    console.log(`\x1b[34m👤 Joined room\x1b[0m socket=${socket.id} room=${roomId}`);
   });
 
   // Send message
@@ -147,22 +182,33 @@ io.on('connection', (socket) => {
       roomId
     });
     
-    console.log(`💬 Message sent in room ${roomId}`);
+    console.log(`\x1b[35m💬 Message\x1b[0m room=${roomId} from=${senderId}`);
   });
 
   socket.on('disconnect', () => {
-    console.log(`🔴 User disconnected: ${socket.id}`);
+    console.log(`\x1b[90m🔴 Socket disconnected\x1b[0m id=${socket.id}`);
   });
 });
+
+// Health monitoring broadcast every 60s
+setInterval(() => {
+  try {
+    io.emit('server_status', {
+      uptime: process.uptime(),
+      users: io.engine.clientsCount,
+    });
+  } catch (_) {}
+}, 60 * 1000);
 
 // ==========================
 // 🚀 START SERVER
 // ==========================
 server.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`✅ Server running on port ${PORT} in ${NODE_ENV} mode`);
 });
 
 process.on('SIGINT', () => {
   console.log('🛑 Graceful shutdown...');
   server.close(() => process.exit(0));
 });
+

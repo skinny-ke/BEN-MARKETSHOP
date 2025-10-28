@@ -8,6 +8,16 @@ const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY
 });
 
+// ✅ Reusable Clerk JWT verification using Clerk SDK (uses JWKS under the hood)
+// Returns decoded token on success; throws on failure
+const verifyClerkToken = async (token) => {
+  if (!token) {
+    throw new Error('Missing token');
+  }
+  const decoded = await clerkClient.verifyToken(token);
+  return decoded;
+};
+
 // 🔐 Clerk + Local Auth Middleware
 const clerkAuth = async (req, res, next) => {
   try {
@@ -25,7 +35,7 @@ const clerkAuth = async (req, res, next) => {
 
     // ✅ 1. Try Clerk verification first
     try {
-      const decoded = await clerkClient.verifyToken(token);
+      const decoded = await verifyClerkToken(token);
       const clerkId = decoded.sub;
       const orgId = decoded.org_id || null;
 
@@ -54,6 +64,16 @@ const clerkAuth = async (req, res, next) => {
         if (orgId) user.orgId = orgId;
         await user.save();
       }
+
+      // 🔓 Bootstrap admin: elevate role if email matches ADMIN_EMAILS
+      try {
+        const adminList = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+        if (user.email && adminList.includes(user.email.toLowerCase()) && user.role !== 'admin') {
+          user.role = 'admin';
+          await user.save();
+          console.log(`👑 Elevated ${user.email} to admin via ADMIN_EMAILS`);
+        }
+      } catch (_) {}
     } catch (clerkError) {
       console.log('⚠️ Clerk verification failed, trying JWT fallback...', clerkError.message);
       // ✅ 2. Fallback to Local JWT (for manual admin users)
@@ -118,4 +138,4 @@ const requireAuth = (req, res, next) => {
   next();
 };
 
-module.exports = { clerkAuth, requireAdmin, requireAuth };
+module.exports = { clerkAuth, requireAdmin, requireAuth, verifyClerkToken };
