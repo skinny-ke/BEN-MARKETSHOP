@@ -35,41 +35,41 @@ app.use(
 // ==========================
 // 🌍 CORS CONFIG
 // ==========================
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:5174',
   'https://ben-marketshop.vercel.app',
+  'https://ben-market.netlify.app',
+  'https://ben-market-shop.onrender.com',
   'https://ben-marketshop-ijn3wow1c-skinny-kes-projects.vercel.app',
-  FRONTEND_URL,
 ];
 
-const corsOptions = {
-  origin: (origin, cb) => {
-    const isAllowed =
-      !origin ||
-      allowedOrigins.includes(origin) ||
-      (new URL(origin).hostname || '').includes('onrender.com') ||
-      (new URL(origin).hostname || '').includes('cloudflare.app');
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        (origin || '').includes('onrender.com') ||
+        (origin || '').includes('vercel.app') ||
+        (origin || '').includes('cloudflare.app')
+      ) return cb(null, true);
+      console.warn(`🚫 Blocked CORS from ${origin}`);
+      cb(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Clerk-Auth-Token',
+      'Origin',
+      'Accept',
+    ],
+    credentials: true,
+  })
+);
 
-    if (isAllowed) return cb(null, true);
-
-    console.warn(`\x1b[31m🚫 Blocked CORS\x1b[0m from ${origin}`);
-    return cb(null, false); // do not crash server
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'Clerk-Auth-Token',
-    'Origin',
-    'Accept',
-  ],
-  optionsSuccessStatus: 204,
-};
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+console.log('✅ CORS enabled for:', allowedOrigins);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -78,7 +78,7 @@ app.use(morgan('combined'));
 // ==========================
 // 📄 STATIC FILES (manifest.json must be public, bypass any auth)
 // ==========================
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 
 // ==========================
 // 📦 DATABASE
@@ -129,10 +129,16 @@ app.use(errorHandler);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: corsOptions.origin,
-    methods: corsOptions.methods,
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
     credentials: true,
-    allowedHeaders: corsOptions.allowedHeaders,
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Clerk-Auth-Token',
+      'Origin',
+      'Accept',
+    ],
   },
 });
 
