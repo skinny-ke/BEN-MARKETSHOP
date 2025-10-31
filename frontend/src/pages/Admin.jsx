@@ -6,7 +6,7 @@ import { productService } from "../api/services";
 import { useClerkContext } from "../context/ClerkContext";
 import AdminChatDashboard from "../components/AdminChatDashboard";
 import UserManagement from "../components/UserManagement";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 export default function Admin() {
   const { user: clerkUser } = useUser();
@@ -17,6 +17,7 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [form, setForm] = useState({ name: '', description: '', price: '', cost: '', image: '', category: '', stock: '' });
 
   // Redirect if not admin
   useEffect(() => {
@@ -81,6 +82,35 @@ export default function Admin() {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update product");
+    }
+  };
+
+  const handleCreateProduct = async () => {
+    try {
+      const payload = {
+        name: form.name.trim(),
+        description: form.description.trim(),
+        price: Number(form.price),
+        cost: form.cost !== '' ? Number(form.cost) : undefined,
+        image: form.image.trim(),
+        category: form.category.trim(),
+        stock: form.stock !== '' ? Number(form.stock) : 0,
+      };
+      if (!payload.name || !payload.price) {
+        toast.error('Name and price are required');
+        return;
+      }
+      const response = await productService.createProduct(payload);
+      if (response.data?.success !== false) {
+        toast.success('Product created');
+        setShowProductForm(false);
+        setEditingProduct(null);
+        setForm({ name: '', description: '', price: '', cost: '', image: '', category: '', stock: '' });
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Create product error:', error);
+      toast.error(error.response?.data?.message || 'Failed to create product');
     }
   };
 
@@ -253,7 +283,7 @@ export default function Admin() {
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.stock || 0}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div className="flex space-x-2">
-                                  <button onClick={() => setEditingProduct(product)} className="text-indigo-600 hover:text-indigo-900">
+                                  <button onClick={() => { setEditingProduct(product); setShowProductForm(true); setForm({ name: product.name || '', description: product.description || '', price: String(product.price || ''), cost: product.cost != null ? String(product.cost) : '', image: product.image || '', category: product.category || '', stock: String(product.stock || 0) }); }} className="text-indigo-600 hover:text-indigo-900">
                                     <FaEdit />
                                   </button>
                                   <button onClick={() => handleDeleteProduct(product._id)} className="text-red-600 hover:text-red-900">
@@ -342,21 +372,63 @@ export default function Admin() {
             </div>
           </div>
 
-          {/* Product Form Modal Placeholder */}
+          {/* Product Form Modal */}
           {showProductForm && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 w-96">
                 <h3 className="text-lg font-semibold mb-4">{editingProduct ? "Edit Product" : "Add Product"}</h3>
-                <p className="text-gray-500">Product form goes here...</p>
-                <button
-                  onClick={() => {
-                    setShowProductForm(false);
-                    setEditingProduct(null);
-                  }}
-                  className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                >
-                  Close
-                </button>
+                <div className="space-y-3">
+                  {[
+                    { key: 'name', label: 'Name', type: 'text' },
+                    { key: 'description', label: 'Description', type: 'text' },
+                    { key: 'price', label: 'Price', type: 'number' },
+                    { key: 'cost', label: 'Cost (optional)', type: 'number' },
+                    { key: 'image', label: 'Image URL', type: 'text' },
+                    { key: 'category', label: 'Category', type: 'text' },
+                    { key: 'stock', label: 'Stock', type: 'number' },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label className="block text-sm text-gray-700 mb-1">{f.label}</label>
+                      <input
+                        type={f.type}
+                        value={form[f.key]}
+                        onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                        className="w-full border rounded px-3 py-2"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    onClick={() => { setShowProductForm(false); setEditingProduct(null); }}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  {editingProduct ? (
+                    <button
+                      onClick={() => handleUpdateProduct(editingProduct._id, {
+                        name: form.name,
+                        description: form.description,
+                        price: Number(form.price),
+                        cost: form.cost !== '' ? Number(form.cost) : undefined,
+                        image: form.image,
+                        category: form.category,
+                        stock: form.stock !== '' ? Number(form.stock) : 0,
+                      })}
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                    >
+                      Save Changes
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleCreateProduct}
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                    >
+                      Create Product
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

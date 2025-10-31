@@ -29,15 +29,61 @@ router.get('/', clerkAuth, requireAdmin, async (req, res) => {
         break;
     }
 
-    const [totalUsers, totalProducts, totalOrders, totalRevenue] = await Promise.all([
+    const [totalUsers, totalProducts, totalOrders, totalsAgg, itemsAgg, topProducts, topCategories, repeatCustomers] = await Promise.all([
       User.countDocuments({ createdAt: { $gte: startDate } }),
       Product.countDocuments({ createdAt: { $gte: startDate } }),
       Order.countDocuments({ createdAt: { $gte: startDate } }),
+      // Revenue
       Order.aggregate([
         { $match: { createdAt: { $gte: startDate }, paymentStatus: 'paid' } },
-        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
-      ])
+        { $group: { _id: null, revenue: { $sum: '$totalAmount' }, orders: { $sum: 1 } } }
+      ]),
+      // Items sold + COGS via lookup to product cost
+      Order.aggregate([
+        { $match: { createdAt: { $gte: startDate }, paymentStatus: 'paid' } },
+        { $unwind: '$items' },
+        { $lookup: { from: 'products', localField: 'items.product', foreignField: '_id', as: 'p' } },
+        { $unwind: '$p' },
+        { $group: { _id: null, itemsSold: { $sum: '$items.quantity' }, cogs: { $sum: { $multiply: ['$items.quantity', { $ifNull: ['$p.cost', 0] }] } } } }
+      ]),
+      // Top products
+      Order.aggregate([
+        { $match: { createdAt: { $gte: startDate }, paymentStatus: 'paid' } },
+        { $unwind: '$items' },
+        { $group: { _id: '$items.product', qty: { $sum: '$items.quantity' } } },
+        { $sort: { qty: -1 } },
+        { $limit: 5 },
+        { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'product' } },
+        { $unwind: '$product' },
+        { $project: { _id: 0, id: '$product._id', name: '$product.name', qty: 1 } }
+      ]),
+      // Top categories
+      Order.aggregate([
+        { $match: { createdAt: { $gte: startDate }, paymentStatus: 'paid' } },
+        { $unwind: '$items' },
+        { $lookup: { from: 'products', localField: 'items.product', foreignField: '_id', as: 'p' } },
+        { $unwind: '$p' },
+        { $group: { _id: '$p.category', qty: { $sum: '$items.quantity' } } },
+        { $sort: { qty: -1 } },
+        { $limit: 5 },
+        { $project: { _id: 0, name: '$_id', qty: 1 } }
+      ]),
+      // Repeat customers: users with >1 paid orders
+      Order.aggregate([
+        { $match: { createdAt: { $gte: startDate }, paymentStatus: 'paid' } },
+        { $group: { _id: '$user', orders: { $sum: 1 } } },
+        { $match: { orders: { $gt: 1 } } },
+        { $count: 'repeat' }
+      ]),
     ]);
+
+    const revenue = totalsAgg[0]?.revenue || 0;
+    const paidOrders = totalsAgg[0]?.orders || 0;
+    const itemsSold = itemsAgg[0]?.itemsSold || 0;
+    const cogs = itemsAgg[0]?.cogs || 0;
+    const grossProfit = Math.max(0, revenue - cogs);
+    const profitMargin = revenue > 0 ? Number(((grossProfit / revenue) * 100).toFixed(2)) : 0;
+    const averageOrderValue = paidOrders > 0 ? Number((revenue / paidOrders).toFixed(2)) : 0;
 
     res.json({
       success: true,
@@ -46,7 +92,15 @@ router.get('/', clerkAuth, requireAdmin, async (req, res) => {
         users: totalUsers,
         products: totalProducts,
         orders: totalOrders,
-        revenue: totalRevenue[0]?.total || 0
+        revenue,
+        cogs,
+        grossProfit,
+        profitMargin,
+        itemsSold,
+        averageOrderValue,
+        topProducts,
+        topCategories,
+        repeatCustomers: repeatCustomers[0]?.repeat || 0,
       }
     });
   } catch (error) {

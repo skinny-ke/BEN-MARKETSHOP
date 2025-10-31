@@ -53,6 +53,7 @@ router.post(
   [
     body('name').isString().isLength({ min: 2 }),
     body('price').isFloat({ gt: 0 }),
+    body('cost').optional().isFloat({ min: 0 }),
     body('description').optional().isString(),
     body('image').optional().isURL().bail().isString(),
     body('category').optional().isString(),
@@ -60,11 +61,12 @@ router.post(
   ],
   async (req, res) => {
   try {
-    const { name, price, description, image, category, stock } = req.body;
+    const { name, price, cost, description, image, category, stock } = req.body;
     
     const newProduct = new Product({
       name,
       price,
+      ...(typeof cost !== 'undefined' ? { cost } : {}),
       description,
       image,
       category,
@@ -90,7 +92,12 @@ router.post(
 // ✅ PUT update product (admin only)
 router.put('/:id', clerkAuth, requireAdmin, async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const update = { ...req.body };
+    // Ensure cost cannot be negative
+    if (typeof update.cost !== 'undefined') {
+      update.cost = Math.max(0, Number(update.cost));
+    }
+    const product = await Product.findByIdAndUpdate(req.params.id, update, { new: true });
     
     if (!product) {
       return res.status(404).json({

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import { useUser, useAuth } from "@clerk/clerk-react";
+import { toast } from 'sonner';
 
 const SocketContext = createContext();
 
@@ -36,7 +37,7 @@ export const SocketProvider = ({ children }) => {
     });
     newSocket.on('order_updated', (payload) => {
       console.log('🧾 Order updated:', payload);
-      // TODO: surface to global notifications center
+      toast.success(`Order ${payload.orderId} updated: ${payload.paymentStatus || payload.status}`);
     });
 
     newSocket.on('server_status', (payload) => {

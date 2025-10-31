@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useClerkContext } from '../context/ClerkContext';
-import { userService } from '../api/userService';
+import axios from '../api/axios';
 import {
   UserIcon,
   ShieldCheckIcon,
@@ -23,12 +23,9 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await userService.getAllUsers();
-      if (response && response.users) {
-        setUsers(response.users);
-      } else {
-        toast.error('No users found or invalid response');
-      }
+      const response = await axios.get('/api/admin/users');
+      const data = response.data?.data || response.data || [];
+      setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('❌ Error fetching users:', error);
       toast.error('Failed to load users');
@@ -39,7 +36,7 @@ const UserManagement = () => {
 
   const handleRoleUpdate = async (userId, role) => {
     try {
-      await userService.updateUserRole(userId, role);
+      await axios.put(`/api/admin/users/${userId}/role`, { role });
       setUsers(prev =>
         prev.map(u => (u._id === userId ? { ...u, role } : u))
       );
