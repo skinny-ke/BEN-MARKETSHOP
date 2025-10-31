@@ -17,10 +17,15 @@ export const SocketProvider = ({ children }) => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
     const token = await getToken();
+    if (!token) {
+      // Do not attempt connection if we cannot get an auth token
+      return;
+    }
+
     const newSocket = io(API_URL, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
-      auth: token ? { token } : undefined,
+      auth: { token },
     });
 
     newSocket.on("connect", () => {
