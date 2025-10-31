@@ -1,5 +1,6 @@
 // backend/Controllers/paymentController.js
 const Order = require('../Models/Order');
+const Product = require('../Models/Product');
 const { sendPaymentSuccess } = require('../services/emailService');
 const User = require('../Models/User');
 
@@ -29,6 +30,26 @@ exports.updateOrderStatus = async (req, res, next) => {
       order.paidAt = new Date();
       if (paymentReference) order.paymentReference = paymentReference;
       await order.save();
+
+      // ✅ Decrement stock for each product in the order (safely, never below zero)
+      try {
+        const populated = await Order.findById(order._id).populate('items.product');
+        for (const item of populated.items) {
+          const productId = item.product?._id || item.product;
+          const qty = Math.max(1, item.quantity || 1);
+          try {
+            const product = await Product.findById(productId);
+            if (!product) continue;
+            const current = typeof product.stock === 'number' ? product.stock : 0;
+            const nextStock = Math.max(0, current - qty);
+            if (nextStock !== current) {
+              product.stock = nextStock;
+              await product.save();
+            }
+          } catch (_) {}
+        }
+      } catch (_) {}
+
       try { await sendPaymentSuccess(order, order.user); } catch (_) {}
       // emit socket event
       try {
