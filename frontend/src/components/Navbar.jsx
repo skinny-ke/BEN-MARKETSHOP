@@ -14,6 +14,7 @@ import Logo from "./Logo";
 import MobileNav from "./MobileNav";
 import { debounce } from "lodash";
 import { StarIcon, XMarkIcon, FunnelIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import DarkModeToggle from "./DarkModeToggle";
 
 export default function Navbar({ products = [] }) {
   const { cart } = useShop();
@@ -70,7 +71,7 @@ export default function Navbar({ products = [] }) {
   };
 
   return (
-    <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} className="bg-green-600 text-white shadow-lg">
+    <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} className="bg-green-600 text-white shadow-lg dark:bg-gray-900 dark:text-gray-100">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -99,6 +100,8 @@ export default function Navbar({ products = [] }) {
                 </span>
               )}
             </Link>
+
+            <DarkModeToggle />
 
             <SignedIn>
               <div className="flex items-center gap-4">

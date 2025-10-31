@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { clerkAuth, requireAdmin } = require('../middleware/clerkAuth');
+const { createClerkClient } = require('@clerk/backend');
 const User = require('../Models/User');
 const Product = require('../Models/Product');
 const Order = require('../Models/Order');
 const { query } = require('express-validator');
+const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 // Get admin dashboard overview
 router.get('/overview', clerkAuth, requireAdmin, async (req, res) => {
@@ -221,6 +223,44 @@ router.get('/orders', clerkAuth, requireAdmin, async (req, res) => {
       success: false,
       message: 'Failed to fetch orders'
     });
+  }
+});
+
+// ✅ Admin: Sync a Clerk user into MongoDB by clerkId
+router.post('/users/sync', clerkAuth, requireAdmin, async (req, res) => {
+  try {
+    const { clerkId } = req.body;
+    if (!clerkId) {
+      return res.status(400).json({ success: false, message: 'clerkId is required' });
+    }
+
+    const clerkUser = await clerk.users.getUser(clerkId);
+    if (!clerkUser) {
+      return res.status(404).json({ success: false, message: 'Clerk user not found' });
+    }
+
+    // Use model helper to sync or create
+    const user = await User.findOrCreateFromClerk(clerkUser);
+    return res.json({ success: true, data: user, message: 'User synced successfully' });
+  } catch (error) {
+    console.error('Error syncing Clerk user:', error);
+    return res.status(500).json({ success: false, message: 'Failed to sync user' });
+  }
+});
+
+// ✅ Admin: Sync by path param
+router.post('/users/sync/:clerkId', clerkAuth, requireAdmin, async (req, res) => {
+  try {
+    const { clerkId } = req.params;
+    const clerkUser = await clerk.users.getUser(clerkId);
+    if (!clerkUser) {
+      return res.status(404).json({ success: false, message: 'Clerk user not found' });
+    }
+    const user = await User.findOrCreateFromClerk(clerkUser);
+    return res.json({ success: true, data: user, message: 'User synced successfully' });
+  } catch (error) {
+    console.error('Error syncing Clerk user:', error);
+    return res.status(500).json({ success: false, message: 'Failed to sync user' });
   }
 });
 
