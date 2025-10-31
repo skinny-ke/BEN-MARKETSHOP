@@ -1,13 +1,10 @@
 import axios from './axios';
 
-// ✅ Automatically detect correct backend URL (Render in production, localhost in dev)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
 export const chatService = {
   /** ✅ Get or create chat with a user */
   getOrCreateChat: async (userId) => {
     try {
-      const response = await axios.get(`${API_URL}/api/chats/${userId}`, {
+      const response = await axios.get(`/api/chats/${userId}`, {
         withCredentials: true,
       });
       return response.data;
@@ -20,7 +17,7 @@ export const chatService = {
   /** ✅ Get user's chats */
   getUserChats: async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/chats`, {
+      const response = await axios.get(`/api/chats`, {
         withCredentials: true,
       });
       return response.data;
@@ -33,7 +30,7 @@ export const chatService = {
   /** ✅ Get messages from specific chat */
   getChatMessages: async (chatId) => {
     try {
-      const response = await axios.get(`${API_URL}/api/chats/messages/${chatId}`, {
+      const response = await axios.get(`/api/chats/messages/${chatId}`, {
         withCredentials: true,
       });
       return response.data;
@@ -46,7 +43,7 @@ export const chatService = {
   /** ✅ Send a new message */
   sendMessage: async (messageData) => {
     try {
-      const response = await axios.post(`${API_URL}/api/chats/messages`, messageData, {
+      const response = await axios.post(`/api/chats/messages`, messageData, {
         withCredentials: true,
       });
       return response.data;
@@ -60,7 +57,7 @@ export const chatService = {
   markAsRead: async (chatId) => {
     try {
       const response = await axios.put(
-        `${API_URL}/api/chats/messages/${chatId}/read`,
+        `/api/chats/messages/${chatId}/read`,
         {},
         { withCredentials: true }
       );
@@ -74,7 +71,7 @@ export const chatService = {
   /** ✅ Get all chats (admin only) */
   getAllChats: async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/chats/admin/all`, {
+      const response = await axios.get(`/api/chats/admin/all`, {
         withCredentials: true,
       });
       return response.data;

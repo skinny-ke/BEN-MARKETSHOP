@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { toast } from 'sonner';
+import axios from '../api/axios';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -42,21 +43,21 @@ export default function AdminDashboard() {
       setLoading(true);
       
       // Fetch dashboard stats
-      const statsResponse = await fetch('/api/admin/stats');
-      const statsData = await statsResponse.json();
+      const statsResponse = await axios.get('/api/admin/stats');
+      const statsData = statsResponse.data?.data || statsResponse.data || {};
       setStats(statsData);
 
       // Fetch recent orders
-      const params = new URLSearchParams({ page: String(page), limit: String(pageSize), ...(statusFilter !== 'all' ? { status: statusFilter } : {}) });
-      const ordersResponse = await fetch(`/api/admin/orders?${params.toString()}`);
-      const ordersData = await ordersResponse.json();
-      setRecentOrders(ordersData.data || ordersData.orders || []);
+      const params = { page, limit: pageSize, ...(statusFilter !== 'all' ? { status: statusFilter } : {}) };
+      const ordersResponse = await axios.get('/api/admin/orders', { params });
+      const ordersData = ordersResponse.data?.data || ordersResponse.data || {};
+      setRecentOrders(ordersData.data || ordersData.orders || ordersData || []);
       setTotalOrders(ordersData.count || ordersData.total || 0);
 
       // Fetch sales data for charts
-      const salesResponse = await fetch('/api/analytics/sales');
-      const salesData = await salesResponse.json();
-      setSalesData(salesData);
+      const salesResponse = await axios.get('/api/analytics/sales');
+      const salesDataRes = salesResponse.data?.data || salesResponse.data || [];
+      setSalesData(salesDataRes);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);

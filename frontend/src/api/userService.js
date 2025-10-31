@@ -1,12 +1,10 @@
 import axios from './axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-
 export const userService = {
   // Get all users (admin only)
   getAllUsers: async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/users`);
+      const response = await axios.get(`/api/users`);
       return response.data;
     } catch (error) {
       console.error('Error getting all users:', error);
@@ -17,7 +15,7 @@ export const userService = {
   // Get user statistics (admin only)
   getUserStats: async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/users/stats`);
+      const response = await axios.get(`/api/users/stats`);
       return response.data;
     } catch (error) {
       console.error('Error getting user stats:', error);
@@ -28,7 +26,7 @@ export const userService = {
   // Update user role (admin only)
   updateUserRole: async (userId, role) => {
     try {
-      const response = await axios.put(`${API_URL}/api/users/${userId}/role`, { role });
+      const response = await axios.put(`/api/users/${userId}/role`, { role });
       return response.data;
     } catch (error) {
       console.error('Error updating user role:', error);
@@ -39,7 +37,7 @@ export const userService = {
   // Deactivate user (admin only)
   deactivateUser: async (userId) => {
     try {
-      const response = await axios.delete(`${API_URL}/api/users/${userId}`);
+      const response = await axios.delete(`/api/users/${userId}`);
       return response.data;
     } catch (error) {
       console.error('Error deactivating user:', error);

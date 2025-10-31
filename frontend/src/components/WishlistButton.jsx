@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { HeartIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);

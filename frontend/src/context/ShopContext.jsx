@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { productService } from '../api/services';
 import { enhanceProductsWithDownloads } from '../utils/sampleData';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 const ShopContext = createContext();
 export const useShop = () => useContext(ShopContext);
@@ -24,7 +24,7 @@ export const ShopProvider = ({ children }) => {
     }
   });
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+  
 
   // Fetch products on mount
   useEffect(() => {
@@ -44,8 +44,8 @@ export const ShopProvider = ({ children }) => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await productService.getProducts();
-      const productsWithDownloads = enhanceProductsWithDownloads(response.data || []);
+      const productsArray = await productService.getProducts();
+      const productsWithDownloads = enhanceProductsWithDownloads(Array.isArray(productsArray) ? productsArray : []);
       setProducts(productsWithDownloads);
     } catch (error) {
       console.error('Fetch products error:', error);

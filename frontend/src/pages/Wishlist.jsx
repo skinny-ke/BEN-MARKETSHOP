@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { HeartIcon, ShoppingCartIcon, EyeIcon, TrashIcon } from '@heroicons/react/24/outline';
 import WishlistButton from '../components/WishlistButton';
 import { useShop } from '../context/ShopContext';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export default function Wishlist() {
   const { addToCart } = useShop();
