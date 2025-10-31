@@ -112,8 +112,7 @@ export const ShopProvider = ({ children }) => {
       clearCart,
       login,
       logout,
-      fetchProducts,
-      API_URL
+      fetchProducts
     }}>
       {children}
     </ShopContext.Provider>
