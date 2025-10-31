@@ -1,13 +1,16 @@
+/* filepath: /components/ChatButton.jsx */
 import React, { useState, useEffect } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { useSocket } from "../context/SocketContext";
 import { chatService } from "../api/chatService";
+import { setClerkTokenGetter } from "../api/axios";
 import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 import ChatWindow from "./ChatWindow";
 
 const ChatButton = ({ receiverId = null }) => {
   const { user } = useUser();
-  const { socket, isConnected, joinChat } = useSocket();
+  const { getToken } = useAuth(); // ✅ Needed for Clerk JWT
+  const { socket, joinChat } = useSocket();
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatId, setChatId] = useState(null);
@@ -16,38 +19,45 @@ const ChatButton = ({ receiverId = null }) => {
   const currentUserId = user?.id;
   const targetReceiverId = receiverId || "admin";
 
-  /** 🟡 Open chat window + load chat + join room */
+  // ✅ Ensure Clerk token is set for Axios before any API call
+  useEffect(() => {
+    if (getToken) {
+      setClerkTokenGetter(() => getToken);
+    }
+  }, [getToken]);
+
+  /** 🟢 Open chat window + load or create chat + join socket room */
   const handleOpenChat = async () => {
     setIsChatOpen(true);
     if (!currentUserId) return;
 
     try {
       const response = await chatService.getOrCreateChat(targetReceiverId);
-      const chat = response.chat || response; // Handle both response formats
+      const chat = response.chat || response;
       setChatId(chat._id);
 
-      // Join the chat room via socket
+      // Join socket room
       joinChat(chat._id);
 
-      // Load existing messages
+      // Fetch previous messages
       const chatMsgs = await chatService.getChatMessages(chat._id);
       setMessages(chatMsgs.messages || []);
-    } catch (err) {
-      console.error("❌ Error loading chat:", err);
+    } catch (error) {
+      console.error("❌ Error opening chat:", error);
     }
   };
 
-  /** 🟣 Close chat window */
+  /** 🔴 Close chat window */
   const handleCloseChat = () => {
     setIsChatOpen(false);
   };
 
-  /** 🧩 Append new messages safely */
+  /** 🟣 Append new messages in real-time */
   const handleNewMessage = (newMsg) => {
     setMessages((prev) => [...prev, newMsg]);
   };
 
-  /** 🔵 Listen for messages via socket */
+  /** 🟠 Listen for new incoming messages */
   useEffect(() => {
     if (!socket) return;
 
@@ -58,7 +68,6 @@ const ChatButton = ({ receiverId = null }) => {
     };
 
     socket.on("receiveMessage", handleReceiveMessage);
-
     return () => socket.off("receiveMessage", handleReceiveMessage);
   }, [socket, chatId]);
 
@@ -67,7 +76,7 @@ const ChatButton = ({ receiverId = null }) => {
       {/* 💬 Floating Chat Button */}
       <button
         onClick={handleOpenChat}
-        className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors z-40"
+        className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all z-50"
         title="Chat with Support"
       >
         <ChatBubbleLeftRightIcon className="h-6 w-6" />

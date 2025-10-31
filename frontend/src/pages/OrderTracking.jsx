@@ -4,9 +4,7 @@ import { CheckCircle, Clock, AlertCircle, Truck, Package, MapPin } from "lucide-
 import { useParams } from "react-router-dom";
 import axios from "../api/axios";
 
-/**
- * Helper: Choose the right icon for a step
- */
+/** Helper: choose the correct icon for each step */
 function getStatusIcon(status, completed) {
   if (completed) return <CheckCircle className="text-green-500" size={20} />;
   switch (status.toLowerCase()) {
@@ -21,9 +19,7 @@ function getStatusIcon(status, completed) {
   }
 }
 
-/**
- * Helper: Apply color classes based on order status
- */
+/** Helper: apply color classes based on status */
 function getStatusColor(status, completed) {
   if (completed) return "text-green-600";
   switch (status.toLowerCase()) {
@@ -38,21 +34,15 @@ function getStatusColor(status, completed) {
   }
 }
 
-/**
- * Helper: Format date nicely
- */
+/** Helper: format date */
 function formatDate(timestamp) {
   try {
-    const date = new Date(timestamp);
-    return date.toLocaleString(); // You can customize the format if needed
+    return new Date(timestamp).toLocaleString();
   } catch {
     return "Invalid date";
   }
 }
 
-/**
- * Component: Order Tracking Page
- */
 function OrderTracking() {
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
@@ -70,7 +60,7 @@ function OrderTracking() {
       try {
         setLoading(true);
         const response = await axios.get(`/api/tracking/${orderId}`);
-        
+
         if (response.data.success) {
           setOrder(response.data.data);
         } else {
@@ -78,7 +68,10 @@ function OrderTracking() {
         }
       } catch (err) {
         console.error("Error fetching order:", err);
-        setError(err.response?.data?.message || "Failed to load order details. Please try again later.");
+        setError(
+          err.response?.data?.message ||
+            "Failed to load order details. Please try again later."
+        );
       } finally {
         setLoading(false);
       }
@@ -120,10 +113,18 @@ function OrderTracking() {
     );
   }
 
-  // Determine completed status for each timeline step
   const getCompleted = (currentStatus, stepStatus) => {
-    const statusOrder = ['pending', 'confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'];
-    return statusOrder.indexOf(currentStatus) >= statusOrder.indexOf(stepStatus);
+    const statusOrder = [
+      "pending",
+      "confirmed",
+      "processing",
+      "shipped",
+      "out_for_delivery",
+      "delivered",
+    ];
+    return (
+      statusOrder.indexOf(currentStatus) >= statusOrder.indexOf(stepStatus)
+    );
   };
 
   return (
@@ -135,7 +136,6 @@ function OrderTracking() {
         className="bg-white rounded-lg shadow-md p-6 mb-6"
       >
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Order Tracking</h2>
-        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex items-start gap-3">
             <Package className="text-blue-500 mt-1" size={20} />
@@ -144,7 +144,7 @@ function OrderTracking() {
               <p className="font-semibold text-gray-800 capitalize">{order.status}</p>
             </div>
           </div>
-          
+
           {order.trackingNumber && (
             <div className="flex items-start gap-3">
               <Truck className="text-green-500 mt-1" size={20} />
@@ -154,12 +154,14 @@ function OrderTracking() {
               </div>
             </div>
           )}
-          
+
           <div className="flex items-start gap-3">
             <MapPin className="text-purple-500 mt-1" size={20} />
             <div>
               <p className="text-xs text-gray-500 uppercase">Total Amount</p>
-              <p className="font-semibold text-gray-800">KSh {order.totalAmount?.toLocaleString()}</p>
+              <p className="font-semibold text-gray-800">
+                KSh {order.totalAmount?.toLocaleString()}
+              </p>
             </div>
           </div>
         </div>
@@ -167,7 +169,7 @@ function OrderTracking() {
 
       {/* Timeline */}
       {order.timeline && order.timeline.length > 0 ? (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="bg-white rounded-lg shadow-md p-6"
@@ -201,9 +203,7 @@ function OrderTracking() {
                     </span>
                   </div>
                   {step.description && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      {step.description}
-                    </p>
+                    <p className="text-sm text-gray-600 mt-1">{step.description}</p>
                   )}
                 </div>
               </motion.div>
@@ -216,7 +216,9 @@ function OrderTracking() {
           animate={{ opacity: 1 }}
           className="bg-white rounded-lg shadow-md p-6"
         >
-          <p className="text-gray-500 text-center">Tracking timeline is not available yet</p>
+          <p className="text-gray-500 text-center">
+            Tracking timeline is not available yet
+          </p>
         </motion.div>
       )}
     </div>

@@ -1,41 +1,68 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useUser } from '@clerk/clerk-react';
 import { HeartIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { toast } from 'sonner';
+import axios from '../api/axios';
 
 const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
+  const { user } = useUser();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize wishlist state from localStorage
+  // ✅ Check if product is already wishlisted (local or server)
   useEffect(() => {
-    const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-    setIsWishlisted(wishlist.some(item => item._id === product._id));
-  }, [product._id]);
+    const initializeWishlist = async () => {
+      try {
+        if (user) {
+          const res = await axios.get(`/api/wishlist/${user.id}`);
+          const userWishlist = res.data.wishlist || [];
+          setIsWishlisted(userWishlist.some(item => item._id === product._id));
+        } else {
+          const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+          setIsWishlisted(wishlist.some(item => item._id === product._id));
+        }
+      } catch (err) {
+        console.error('Error fetching wishlist:', err);
+      }
+    };
+    initializeWishlist();
+  }, [user, product._id]);
 
+  // ✅ Toggle wishlist (local + server)
   const toggleWishlist = async () => {
     if (isLoading) return;
     setIsLoading(true);
 
     try {
-      const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
-
-      if (isWishlisted) {
-        // Remove from wishlist
-        const updatedWishlist = wishlist.filter(item => item._id !== product._id);
-        localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
-        setIsWishlisted(false);
-        toast.success('Removed from wishlist');
+      if (user) {
+        if (isWishlisted) {
+          await axios.delete(`/api/wishlist/${user.id}/${product._id}`);
+          setIsWishlisted(false);
+          toast.success('Removed from wishlist');
+        } else {
+          await axios.post(`/api/wishlist/${user.id}`, { product });
+          setIsWishlisted(true);
+          toast.success('Added to wishlist');
+        }
       } else {
-        // Add to wishlist
-        const updatedWishlist = [...wishlist, product];
-        localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
-        setIsWishlisted(true);
-        toast.success('Added to wishlist');
+        // Guest mode: use localStorage
+        const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+        if (isWishlisted) {
+          const updated = wishlist.filter(item => item._id !== product._id);
+          localStorage.setItem('wishlist', JSON.stringify(updated));
+          setIsWishlisted(false);
+          toast.success('Removed from wishlist');
+        } else {
+          const updated = [...wishlist, product];
+          localStorage.setItem('wishlist', JSON.stringify(updated));
+          setIsWishlisted(true);
+          toast.success('Added to wishlist');
+        }
       }
     } catch (error) {
-      console.error('Wishlist error:', error);
+      console.error('❌ Wishlist error:', error);
       toast.error('Failed to update wishlist');
     } finally {
       setIsLoading(false);
@@ -50,14 +77,18 @@ const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
       disabled={isLoading}
       title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
       className={`
-        p-2 rounded-full transition-colors
-        ${isWishlisted ? 'bg-red-100 text-red-500 hover:bg-red-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}
+        p-2 rounded-full transition-colors duration-200
+        ${isWishlisted 
+          ? 'bg-red-100 text-red-500 hover:bg-red-200' 
+          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}
         ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
       `}
       aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
     >
       {isLoading ? (
-        <div className={`${size} animate-spin rounded-full border-2 border-gray-300 border-t-gray-600`} />
+        <div
+          className={`${size} animate-spin rounded-full border-2 border-gray-300 border-t-gray-600`}
+        />
       ) : isWishlisted ? (
         <HeartIconSolid className={`${size} fill-current`} />
       ) : (

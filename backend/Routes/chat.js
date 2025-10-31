@@ -6,35 +6,42 @@ const {
   getChatMessages,
   sendMessage,
   markAsRead,
-  getAllChats
+  getAllChats,
 } = require('../Controllers/chatController');
-const { clerkAuth, requireAdmin, requireAuth } = require('../middleware/clerkAuth');
-const { param, body } = require('express-validator');
+const { clerkAuth, requireAdmin } = require('../middleware/clerkAuth');
+const { body } = require('express-validator');
 
-// Get or create chat with specific user
-router.get('/:userId', clerkAuth, getOrCreateChat);
+/**
+ * 🧠 ROUTE STRUCTURE & AUTH:
+ * - clerkAuth ensures each request includes a valid Clerk JWT
+ * - requireAdmin verifies that the MongoDB user has the "admin" role
+ * - Route order matters: static routes go before dynamic ones
+ */
 
-// Get current user's chats
-router.get('/', clerkAuth, getUserChats);
-
-// Get all chats (admin only)
+// ✅ Admin: Get all chats
 router.get('/admin/all', clerkAuth, requireAdmin, getAllChats);
 
-// Get messages for a specific chat
+// ✅ Authenticated user: Get or create a chat with another user
+router.get('/:userId', clerkAuth, getOrCreateChat);
+
+// ✅ Authenticated user: Get their chat list
+router.get('/', clerkAuth, getUserChats);
+
+// ✅ Authenticated user: Get messages from a specific chat
 router.get('/messages/:chatId', clerkAuth, getChatMessages);
 
-// Send a message
+// ✅ Authenticated user: Send a new message
 router.post(
   '/messages',
   clerkAuth,
   [
     body('chatId').isString().isLength({ min: 8 }),
-    body('message').isString().isLength({ min: 1, max: 2000 })
+    body('message').isString().isLength({ min: 1, max: 2000 }),
   ],
   sendMessage
 );
 
-// Mark messages as read
+// ✅ Authenticated user: Mark messages as read
 router.put('/messages/:chatId/read', clerkAuth, markAsRead);
 
 module.exports = router;

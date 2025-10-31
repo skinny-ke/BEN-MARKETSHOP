@@ -3,20 +3,42 @@ require('dotenv').config();
 
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGO_URI || 'mongodb+srv://skinny-ke:%40Skinny254@cluster0.zjhgrvz.mongodb.net/benmarket?retryWrites=true&w=majority&appName=Cluster0';
+    const mongoURI = process.env.MONGO_URI;
+
+    if (!mongoURI) {
+      console.warn('⚠️  MONGO_URI not found in environment variables.');
+      throw new Error('Missing MONGO_URI. Please check your .env file.');
+    }
+
+    // ✅ Connect to MongoDB using the new stable Mongoose connection options
     const conn = await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      autoIndex: true, // helpful during development
+      maxPoolSize: 10, // better scaling
+      serverSelectionTimeoutMS: 5000, // fail fast on bad connection
+      socketTimeoutMS: 45000,
+      family: 4, // IPv4 only
     });
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+
+    console.log(`✅ MongoDB Connected Successfully: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    console.log('⚠️  Continuing without database connection for development...');
-    // Don't exit in development, allow server to start
-    if (process.env.NODE_ENV === 'production') {
+    console.error('❌ MongoDB Connection Error:', error.message);
+
+    // Allow development mode to continue without DB
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('⚠️  Running without database connection (development mode)');
+    } else {
       process.exit(1);
     }
   }
+
+  // Extra: Handle future connection drops gracefully
+  mongoose.connection.on('disconnected', () => {
+    console.warn('⚠️  MongoDB disconnected. Retrying...');
+  });
+
+  mongoose.connection.on('reconnected', () => {
+    console.log('🔄 MongoDB reconnected successfully');
+  });
 };
 
 module.exports = connectDB;
