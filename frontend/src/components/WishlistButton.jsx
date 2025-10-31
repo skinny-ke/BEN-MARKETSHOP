@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+/* filepath: /components/WishlistButton.jsx */
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/clerk-react';
 import { HeartIcon } from '@heroicons/react/24/outline';
@@ -11,7 +12,7 @@ const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ Check if product is already wishlisted (local or server)
+  /** ✅ Initialize wishlist state */
   useEffect(() => {
     const initializeWishlist = async () => {
       try {
@@ -24,14 +25,14 @@ const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
           setIsWishlisted(wishlist.some(item => item._id === product._id));
         }
       } catch (err) {
-        console.error('Error fetching wishlist:', err);
+        console.error('❌ Error fetching wishlist:', err);
       }
     };
     initializeWishlist();
   }, [user, product._id]);
 
-  // ✅ Toggle wishlist (local + server)
-  const toggleWishlist = async () => {
+  /** ✅ Toggle wishlist status */
+  const toggleWishlist = useCallback(async () => {
     if (isLoading) return;
     setIsLoading(true);
 
@@ -47,7 +48,6 @@ const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
           toast.success('Added to wishlist');
         }
       } else {
-        // Guest mode: use localStorage
         const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
         if (isWishlisted) {
           const updated = wishlist.filter(item => item._id !== product._id);
@@ -62,12 +62,12 @@ const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
         }
       }
     } catch (error) {
-      console.error('❌ Wishlist error:', error);
+      console.error('❌ Wishlist update error:', error);
       toast.error('Failed to update wishlist');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isWishlisted, isLoading, product, user]);
 
   return (
     <motion.button
@@ -86,9 +86,7 @@ const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
       aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
     >
       {isLoading ? (
-        <div
-          className={`${size} animate-spin rounded-full border-2 border-gray-300 border-t-gray-600`}
-        />
+        <div className={`${size} animate-spin rounded-full border-2 border-gray-300 border-t-gray-600`} />
       ) : isWishlisted ? (
         <HeartIconSolid className={`${size} fill-current`} />
       ) : (

@@ -1,9 +1,11 @@
 import express from 'express';
-import Wishlist from '../Models/Wishlist.js'; // mongoose model
+import Wishlist from '../Models/Wishlist.js';
+import { clerkAuth } from '../middleware/clerkAuth.js';
+
 const router = express.Router();
 
-// Get user's wishlist
-router.get('/:userId', async (req, res) => {
+// ✅ Get user's wishlist (protected)
+router.get('/:userId', clerkAuth, async (req, res) => {
   try {
     const wishlist = await Wishlist.findOne({ userId: req.params.userId });
     res.json(wishlist || { wishlist: [] });
@@ -12,13 +14,13 @@ router.get('/:userId', async (req, res) => {
   }
 });
 
-// Add item
-router.post('/:userId', async (req, res) => {
+// ✅ Add item to wishlist (protected)
+router.post('/:userId', clerkAuth, async (req, res) => {
   try {
     const { product } = req.body;
     let wishlist = await Wishlist.findOne({ userId: req.params.userId });
     if (!wishlist) wishlist = new Wishlist({ userId: req.params.userId, wishlist: [] });
-    if (!wishlist.wishlist.some(p => p._id === product._id)) {
+    if (!wishlist.wishlist.some(p => p._id.toString() === product._id.toString())) {
       wishlist.wishlist.push(product);
       await wishlist.save();
     }
@@ -28,13 +30,13 @@ router.post('/:userId', async (req, res) => {
   }
 });
 
-// Remove item
-router.delete('/:userId/:productId', async (req, res) => {
+// ✅ Remove item from wishlist (protected)
+router.delete('/:userId/:productId', clerkAuth, async (req, res) => {
   try {
     const { userId, productId } = req.params;
     const wishlist = await Wishlist.findOne({ userId });
     if (wishlist) {
-      wishlist.wishlist = wishlist.wishlist.filter(p => p._id !== productId);
+      wishlist.wishlist = wishlist.wishlist.filter(p => p._id.toString() !== productId.toString());
       await wishlist.save();
     }
     res.json(wishlist);

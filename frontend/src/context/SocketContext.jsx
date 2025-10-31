@@ -14,27 +14,21 @@ export const SocketProvider = ({ children }) => {
   const connectSocket = useCallback(async () => {
     if (socket || !user) return;
 
-    // ✅ Use environment variable for deployment
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
     const token = await getToken();
-    if (!token) {
-      // Do not attempt connection if we cannot get an auth token
-      return;
-    }
+    if (!token) return;
 
     const newSocket = io(API_URL, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
-      auth: { token },
+      auth: { token }, // ✅ token sent to backend
     });
 
     newSocket.on("connect", () => {
-      console.log("✅ Socket connected");
+      console.log("✅ Socket connected:", newSocket.id);
       setIsConnected(true);
-
-      console.log("👤 Authenticated as:", user.id);
     });
+
     newSocket.on('order_updated', (payload) => {
       console.log('🧾 Order updated:', payload);
       toast.success(`Order ${payload.orderId} updated: ${payload.paymentStatus || payload.status}`);
@@ -58,7 +52,7 @@ export const SocketProvider = ({ children }) => {
     });
 
     setSocket(newSocket);
-  }, [socket, user]);
+  }, [socket, user, getToken]);
 
   const disconnectSocket = useCallback(() => {
     if (socket) {
@@ -78,17 +72,6 @@ export const SocketProvider = ({ children }) => {
     [socket]
   );
 
-  useEffect(() => {
-    if (user && !socket) connectSocket();
-    if (!user && socket) disconnectSocket();
-  }, [user, socket, connectSocket, disconnectSocket]);
-
-  useEffect(() => {
-    return () => {
-      if (socket) socket.disconnect();
-    };
-  }, [socket]);
-
   const sendMessage = useCallback((messageData) => {
     if (socket && isConnected) {
       socket.emit('sendMessage', messageData);
@@ -100,6 +83,17 @@ export const SocketProvider = ({ children }) => {
       socket.emit('typing', data);
     }
   }, [socket, isConnected]);
+
+  useEffect(() => {
+    if (user && !socket) connectSocket();
+    if (!user && socket) disconnectSocket();
+  }, [user, socket, connectSocket, disconnectSocket]);
+
+  useEffect(() => {
+    return () => {
+      if (socket) socket.disconnect();
+    };
+  }, [socket]);
 
   return (
     <SocketContext.Provider value={{ 
