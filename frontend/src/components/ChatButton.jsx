@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { useSocket } from "../context/SocketContext";
 import { chatService } from "../api/chatService";
-import { setClerkTokenGetter } from "../lib/axios";
+import { setClerkTokenGetter } from "../api/axios"; // ✅ Correct path
 import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 import ChatWindow from "./ChatWindow";
 
@@ -32,15 +32,16 @@ const ChatButton = ({ receiverId = null }) => {
 
     try {
       // Get or create chat
-      const { chat } = await chatService.getOrCreateChat(targetReceiverId);
+      const response = await chatService.getOrCreateChat(targetReceiverId);
+      const chat = response.chat || response; // support both structures
       setChatId(chat._id);
 
       // Join socket room
       joinChat(chat._id);
 
       // Load previous messages
-      const { messages: chatMsgs } = await chatService.getChatMessages(chat._id);
-      setMessages(chatMsgs || []);
+      const msgResponse = await chatService.getChatMessages(chat._id);
+      setMessages(msgResponse.messages || []);
     } catch (err) {
       console.error("❌ Error opening chat:", err.response?.data || err.message || err);
     }
