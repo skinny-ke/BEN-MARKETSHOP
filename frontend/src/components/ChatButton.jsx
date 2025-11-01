@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { useSocket } from "../context/SocketContext";
-import { chatService } from "../lib/chatService";
+import { chatService } from "../api/chatService";
 import { setClerkTokenGetter } from "../lib/axios";
 import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 import ChatWindow from "./ChatWindow";
