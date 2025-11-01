@@ -5,7 +5,7 @@ import { HeartIcon, ShoppingCartIcon, EyeIcon, TrashIcon } from '@heroicons/reac
 import WishlistButton from '../components/WishlistButton';
 import { useShop } from '../context/ShopContext';
 import { toast } from 'sonner';
-import api from '../lib/axios';
+import api from '../api/axios';
 import { useUser } from '@clerk/clerk-react';
 
 export default function Wishlist() {
