@@ -1,4 +1,4 @@
-/* filepath: /lib/chatService.js */
+/* filepath: /api/chatService.js */
 
 import api from './axios';
 
