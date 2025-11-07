@@ -50,7 +50,15 @@ exports.updateOrderStatus = async (req, res, next) => {
         }
       } catch (_) {}
 
-      try { await sendPaymentSuccess(order, order.user); } catch (_) {}
+      // Send payment success email
+      try {
+        if (order.user && order.user.email) {
+          await sendPaymentSuccess(order, order.user);
+          console.log('✅ Payment success email sent');
+        }
+      } catch (emailError) {
+        console.error('❌ Failed to send payment success email:', emailError);
+      }
       // emit socket event
       try {
         const io = req.app.get('io');

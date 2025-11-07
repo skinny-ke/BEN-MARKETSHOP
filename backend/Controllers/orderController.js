@@ -1,4 +1,5 @@
 const Order = require('../Models/Order');
+const { sendOrderConfirmation, sendPaymentSuccess, sendOrderStatusUpdate } = require('../services/emailService');
 
 /**
  * @desc Create a new order
@@ -33,6 +34,17 @@ exports.createOrder = async (req, res, next) => {
     });
 
     await order.save();
+
+    // Send order confirmation email if user is logged in
+    if (req.user && req.user.email) {
+      try {
+        await sendOrderConfirmation(order, req.user);
+        console.log('✅ Order confirmation email sent');
+      } catch (emailError) {
+        console.error('❌ Failed to send order confirmation email:', emailError);
+        // Don't fail the order creation if email fails
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -118,8 +130,20 @@ exports.updateOrderStatus = async (req, res, next) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: 'Order not found' });
 
+    const oldStatus = order.status;
     order.status = status;
     await order.save();
+
+    // Send status update email if user exists and status changed
+    if (req.user && req.user.email && oldStatus !== status) {
+      try {
+        await sendOrderStatusUpdate(order, req.user, status);
+        console.log('✅ Order status update email sent');
+      } catch (emailError) {
+        console.error('❌ Failed to send order status update email:', emailError);
+        // Don't fail the status update if email fails
+      }
+    }
 
     res.json({ success: true, message: 'Order status updated', order });
   } catch (error) {

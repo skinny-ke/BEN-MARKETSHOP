@@ -122,7 +122,8 @@ logger.info(`✅ CORS allowedOrigins: ${allowedOrigins.join(', ')}`);
 // Clerk webhook should be BEFORE body parser if you verify raw body (already in your code base)
 // -----------------
 if (fsExistsSync(path.join(__dirname, 'Routes', 'clerkWebhook.js'))) {
-  app.use('/api/clerk', require('./Routes/clerkWebhook'));
+  const clerkWebhook = require('./Routes/clerkWebhook.js');
+  app.use('/api/clerk', clerkWebhook);
 }
 
 // Body parsers
@@ -174,6 +175,7 @@ app.use('/api/admin', require('./Routes/admin'));
 app.use('/api/tracking', require('./Routes/tracking'));
 app.use('/api/analytics', require('./Routes/analytics'));
 app.use('/api/wishlist', require('./Routes/wishlist')); // ensure route exists
+app.use('/api/reviews', require('./Routes/review'));
 
 app.get('/health', (req, res) => res.json({ status: 'OK', env: NODE_ENV, uptime: process.uptime() }));
 app.get('/', (req, res) => res.send(`Ben Market API running in ${NODE_ENV} mode 🚀`));

@@ -1,6 +1,6 @@
-import express from "express";
-import User from "../Models/User.js";
-import { Webhook } from "svix";
+const express = require("express");
+const User = require("../Models/User");
+const { Webhook } = require("svix");
 
 const router = express.Router();
 
@@ -85,4 +85,4 @@ router.post("/webhook", express.raw({ type: "*/*" }), async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

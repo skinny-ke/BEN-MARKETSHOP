@@ -1,6 +1,6 @@
 // backend/db.js
 const mongoose = require('mongoose');
-require('dotenv').config({ path: './backend/.env' }); // ✅ only once
+require('dotenv').config({ path: './.env' }); // ✅ only once
 
 const connectDB = async () => {
   try {

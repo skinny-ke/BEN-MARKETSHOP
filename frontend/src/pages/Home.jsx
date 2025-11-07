@@ -1,26 +1,84 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import ProductCard from "../components/ProductCard";
-import EnhancedSearch from "../components/EnhancedSearch";
+import AdvancedSearch from "../components/AdvancedSearch";
 import Quotes from "../components/Quotes";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useShop } from "../context/ShopContext";
+import { toast } from "sonner";
 
 export default function Home() {
   const { products, loading } = useShop();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [filters, setFilters] = useState({
+    category: "",
+    priceRange: [0, 10000],
+    rating: 0,
+    inStock: false,
+    sortBy: "relevance",
+  });
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
   // Get unique categories
   const categories = ["all", ...new Set(products.map(p => p.category).filter(Boolean))];
 
-  // Filter products
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Advanced filtering logic
+  useEffect(() => {
+    let filtered = [...products];
+
+    // Search filter
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Category filter
+    if (filters.category) {
+      filtered = filtered.filter(product => product.category === filters.category);
+    }
+
+    // Price range filter
+    filtered = filtered.filter(product =>
+      product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1]
+    );
+
+    // Rating filter (if product has rating)
+    if (filters.rating > 0) {
+      filtered = filtered.filter(product => (product.rating || 0) >= filters.rating);
+    }
+
+    // In stock filter
+    if (filters.inStock) {
+      filtered = filtered.filter(product => product.stock > 0);
+    }
+
+    // Sorting
+    switch (filters.sortBy) {
+      case "price-low":
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case "price-high":
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case "rating":
+        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        break;
+      case "newest":
+        filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        break;
+      case "name":
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      default:
+        // relevance - keep original order
+        break;
+    }
+
+    setFilteredProducts(filtered);
+  }, [products, searchTerm, filters]);
 
   if (loading) {
     return (
@@ -70,30 +128,12 @@ export default function Home() {
 
       {/* Enhanced Search Section */}
       <div className="container mx-auto px-4 py-8">
-        {/* Category Buttons */}
-        <div className="flex gap-2 flex-wrap my-4">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                selectedCategory === cat
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Enhanced Search Component */}
-        <EnhancedSearch 
+        {/* Advanced Search Component */}
+        <AdvancedSearch
           onSearch={setSearchTerm}
-          onFilter={(filters) => {
-            setSelectedCategory(filters.category || "all");
-          }}
+          onFilter={setFilters}
           products={products}
+          showLogo={true}
         />
 
         {/* Motivational Quote Section */}
@@ -114,9 +154,16 @@ export default function Home() {
 
         {/* Products Grid */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">
-            {filteredProducts.length} Product{filteredProducts.length !== 1 ? 's' : ''} Found
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">
+              {filteredProducts.length} Product{filteredProducts.length !== 1 ? 's' : ''} Found
+            </h2>
+            {searchTerm && (
+              <div className="text-sm text-gray-600">
+                Searching for: <span className="font-medium">"{searchTerm}"</span>
+              </div>
+            )}
+          </div>
           
           {filteredProducts.length === 0 ? (
             <motion.div

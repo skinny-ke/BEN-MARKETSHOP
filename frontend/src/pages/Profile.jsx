@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser, useClerk } from "@clerk/clerk-react";
 import { motion } from "framer-motion";
-import { FaCamera, FaEdit, FaSave, FaTimes } from "react-icons/fa";
+import { FaCamera, FaEdit, FaSave, FaTimes, FaShoppingBag, FaHeart, FaMapMarkerAlt, FaCreditCard } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { useClerkContext } from "../context/ClerkContext";
+import api from "../api/axios";
 
 // ---------- Header Component ----------
 const ProfileHeader = ({ user, isEditing, toggleEdit, openUserProfile }) => {
@@ -136,10 +138,123 @@ const ActionButtons = ({ handleSave, handleCancel }) => (
   </div>
 );
 
+// ---------- Order History Component ----------
+const OrderHistory = ({ userData }) => {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!userData?.id) return;
+      try {
+        const response = await api.get('/orders');
+        if (response.data.success) {
+          setOrders(response.data.orders.slice(0, 5)); // Show last 5 orders
+        }
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, [userData?.id]);
+
+  if (loading) return <div className="text-center py-4">Loading orders...</div>;
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <FaShoppingBag className="w-5 h-5" />
+        Recent Orders
+      </h3>
+
+      {orders.length === 0 ? (
+        <p className="text-gray-500 text-center py-4">No orders yet</p>
+      ) : (
+        <div className="space-y-3">
+          {orders.map((order) => (
+            <div key={order._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-medium text-gray-800">Order #{order._id.slice(-8)}</p>
+                <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold text-green-600">KSh {order.totalAmount.toLocaleString()}</p>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                  order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                  order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {order.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ---------- Wishlist Preview Component ----------
+const WishlistPreview = ({ userData }) => {
+  const [wishlist, setWishlist] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      if (!userData?.id) return;
+      try {
+        const response = await api.get(`/wishlist/${userData.id}`);
+        if (response.data.wishlist) {
+          setWishlist(response.data.wishlist.slice(0, 4)); // Show first 4 items
+        }
+      } catch (error) {
+        console.error('Error fetching wishlist:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchWishlist();
+  }, [userData?.id]);
+
+  if (loading) return <div className="text-center py-4">Loading wishlist...</div>;
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <FaHeart className="w-5 h-5" />
+        Wishlist ({wishlist.length})
+      </h3>
+
+      {wishlist.length === 0 ? (
+        <p className="text-gray-500 text-center py-4">No items in wishlist</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {wishlist.map((item) => (
+            <div key={item._id} className="bg-gray-50 rounded-lg p-3">
+              <img
+                src={item.image || '/placeholder.png'}
+                alt={item.name}
+                className="w-full h-20 object-cover rounded mb-2"
+              />
+              <p className="text-sm font-medium text-gray-800 truncate">{item.name}</p>
+              <p className="text-sm text-green-600 font-semibold">KSh {item.price.toLocaleString()}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ---------- Main Profile Component ----------
 export default function Profile() {
   const { user } = useUser();
   const { openUserProfile } = useClerk();
+  const { userData } = useClerkContext();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -189,16 +304,62 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <ProfileHeader user={user} isEditing={isEditing} toggleEdit={toggleEdit} openUserProfile={openUserProfile} />
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <PersonalInfo user={user} isEditing={isEditing} formData={formData} handleChange={handleChange} />
-                <AccountInfo user={user} />
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Profile Card */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                <ProfileHeader user={user} isEditing={isEditing} toggleEdit={toggleEdit} openUserProfile={openUserProfile} />
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <PersonalInfo user={user} isEditing={isEditing} formData={formData} handleChange={handleChange} />
+                    <AccountInfo user={user} />
+                  </div>
+
+                  {isEditing && <ActionButtons handleSave={handleSave} handleCancel={handleCancel} />}
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Quick Stats */}
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Stats</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 flex items-center gap-2">
+                      <FaShoppingBag className="w-4 h-4" />
+                      Total Orders
+                    </span>
+                    <span className="font-semibold">12</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 flex items-center gap-2">
+                      <FaHeart className="w-4 h-4" />
+                      Wishlist Items
+                    </span>
+                    <span className="font-semibold">8</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 flex items-center gap-2">
+                      <FaCreditCard className="w-4 h-4" />
+                      Total Spent
+                    </span>
+                    <span className="font-semibold text-green-600">KSh 45,000</span>
+                  </div>
+                </div>
               </div>
 
-              {isEditing && <ActionButtons handleSave={handleSave} handleCancel={handleCancel} />}
+              {/* Order History */}
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <OrderHistory userData={userData} />
+              </div>
+
+              {/* Wishlist Preview */}
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <WishlistPreview userData={userData} />
+              </div>
             </div>
           </div>
         </motion.div>

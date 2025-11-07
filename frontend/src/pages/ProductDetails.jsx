@@ -5,6 +5,8 @@ import { FaShoppingCart, FaArrowLeft, FaStar, FaHeart } from "react-icons/fa";
 import { useShop } from "../context/ShopContext";
 import { productService } from "../api/services";
 import DownloadableContent from "../components/DownloadableContent";
+import ProductReviews from "../components/ProductReviews";
+import WishlistButton from "../components/WishlistButton";
 import toast from "react-hot-toast";
 
 export default function ProductDetails() {
@@ -189,9 +191,7 @@ export default function ProductDetails() {
                 >
                   <FaShoppingCart /> Add to Cart
                 </motion.button>
-                <button className="p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                  <FaHeart className="text-gray-600" />
-                </button>
+                <WishlistButton product={product} size="w-6 h-6" />
               </div>
 
               {/* Product Features */}
@@ -206,6 +206,16 @@ export default function ProductDetails() {
               </div>
             </div>
           </div>
+
+          {/* Reviews Section */}
+          <motion.div
+            className="mt-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <ProductReviews productId={product._id} />
+          </motion.div>
 
           {/* Downloadable Content */}
           {product.downloadableFiles?.length > 0 && (
