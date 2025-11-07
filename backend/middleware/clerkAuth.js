@@ -13,11 +13,16 @@ const verifyClerkToken = async (token) => {
   if (!token) throw new Error('Missing token');
   if (!token.includes('.')) throw new Error('Malformed JWT'); // prevent Clerk crash
 
-  const { payload } = await verifyToken(token, {
-    secretKey: process.env.CLERK_SECRET_KEY,
-  });
-
-  return payload;
+  try {
+    const { payload } = await verifyToken(token, {
+      secretKey: process.env.CLERK_SECRET_KEY,
+    });
+    return payload;
+  } catch (error) {
+    // If Clerk verification fails, return null instead of throwing
+    console.warn('⚠️ Clerk token verification failed:', error.message);
+    return null;
+  }
 };
 
 /**
@@ -44,6 +49,9 @@ const clerkAuth = async (req, res, next) => {
     // -------------------------------
     try {
       const decoded = await verifyClerkToken(token);
+      if (!decoded) {
+        throw new Error('Clerk token verification returned null');
+      }
       const clerkId = decoded.sub;
       const orgId = decoded.org_id || null;
 
@@ -101,6 +109,7 @@ const clerkAuth = async (req, res, next) => {
       return next();
     } catch (clerkError) {
       console.warn('⚠️ Clerk verification failed:', clerkError.message);
+      // Continue to fallback JWT verification
     }
 
     // -------------------------------
