@@ -44,7 +44,7 @@ export const ClerkProvider = ({ children }) => {
           return;
         }
 
-        const response = await axios.get('/users/profile'); // ✅ removed redundant /api prefix
+        const response = await axios.get('/api/users/profile');
         const userInfo = response.data.data || response.data;
 
         setUserData(userInfo);

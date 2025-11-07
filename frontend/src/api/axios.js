@@ -23,9 +23,8 @@ api.interceptors.request.use(
       try {
         let token = null;
         try {
-          token = await getClerkToken({ template: 'default' });
+          token = await getClerkToken();
         } catch (_) {}
-        if (!token) token = await getClerkToken();
 
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
