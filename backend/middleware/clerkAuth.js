@@ -8,13 +8,11 @@ const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY,
 });
 
-/**
- * Verify a Clerk-issued JWT using Clerk's backend SDK.
- */
+// ✅ Verify a Clerk-issued JWT using Clerk's backend SDK
 const verifyClerkToken = async (token) => {
   if (!token) throw new Error('Missing token');
-  
-  // ✅ use verifyToken directly (not from clerkClient)
+  if (!token.includes('.')) throw new Error('Malformed JWT'); // prevent Clerk crash
+
   const { payload } = await verifyToken(token, {
     secretKey: process.env.CLERK_SECRET_KEY,
   });
@@ -27,9 +25,13 @@ const verifyClerkToken = async (token) => {
  */
 const clerkAuth = async (req, res, next) => {
   try {
-    const authHeader = req.header('Authorization') || '';
-    const altHeader = req.header('Clerk-Auth-Token') || '';
-    const token = authHeader.replace('Bearer ', '').trim() || altHeader.trim();
+    const rawAuth =
+      req.header('Authorization') ||
+      req.header('authorization') ||
+      req.header('Clerk-Auth-Token') ||
+      '';
+
+    const token = rawAuth.replace('Bearer ', '').trim();
 
     if (!token) {
       return res.status(401).json({ success: false, message: 'No token provided' });
@@ -38,15 +40,15 @@ const clerkAuth = async (req, res, next) => {
     let user;
 
     // -------------------------------
-    // 1️⃣  Try verifying via Clerk
+    // 1️⃣ Try verifying via Clerk
     // -------------------------------
     try {
       const decoded = await verifyClerkToken(token);
       const clerkId = decoded.sub;
       const orgId = decoded.org_id || null;
 
+      // find or create the user
       user = await User.findOne({ clerkId });
-
       if (!user) {
         const clerkUser = await clerkClient.users.getUser(clerkId);
         user = await User.create({
@@ -63,7 +65,6 @@ const clerkAuth = async (req, res, next) => {
           image: clerkUser.imageUrl || '',
           isActive: true,
         });
-
         console.log(`✅ Created new Clerk user in MongoDB: ${user.email}`);
       } else {
         user.lastLogin = new Date();
@@ -84,7 +85,7 @@ const clerkAuth = async (req, res, next) => {
       ) {
         user.role = 'admin';
         await user.save();
-        console.log(`👑 Elevated ${user.email} to admin (via ADMIN_EMAILS)`);
+        console.log(`👑 Elevated ${user.email} to admin`);
       }
 
       req.user = {
@@ -98,45 +99,46 @@ const clerkAuth = async (req, res, next) => {
       };
 
       return next();
-
     } catch (clerkError) {
       console.warn('⚠️ Clerk verification failed:', clerkError.message);
+    }
 
-      // -------------------------------
-      // 2️⃣ Fallback: Local JWT
-      // -------------------------------
-      try {
-        const decoded = jwt.verify(
-          token,
-          process.env.JWT_SECRET || 'defaultSecret'
-        );
+    // -------------------------------
+    // 2️⃣ Fallback: Local JWT
+    // -------------------------------
+    try {
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || 'defaultSecret'
+      );
 
-        user = await User.findById(decoded.id);
-        if (!user) {
-          return res
-            .status(401)
-            .json({ success: false, message: 'Invalid local user token' });
-        }
-
-        req.user = {
-          id: user._id.toString(),
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        };
-
-        console.log(`🔐 Local JWT auth success: ${user.email}`);
-        return next();
-      } catch (jwtError) {
-        console.error('❌ Auth verification failed:', jwtError.message);
+      user = await User.findById(decoded.id);
+      if (!user) {
         return res
           .status(401)
-          .json({ success: false, message: 'Invalid or expired token' });
+          .json({ success: false, message: 'Invalid local user token' });
       }
+
+      req.user = {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      };
+
+      console.log(`🔐 Local JWT auth success: ${user.email}`);
+      return next();
+    } catch (jwtError) {
+      console.error('❌ Auth verification failed:', jwtError.message);
+      return res
+        .status(401)
+        .json({ success: false, message: 'Invalid or expired token' });
     }
   } catch (err) {
     console.error('❌ Clerk/local auth error:', err.message);
-    return res.status(401).json({ success: false, message: 'Authentication failed' });
+    return res
+      .status(401)
+      .json({ success: false, message: 'Authentication failed' });
   }
 };
 

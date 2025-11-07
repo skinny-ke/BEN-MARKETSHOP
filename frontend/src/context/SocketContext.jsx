@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import { useUser, useAuth } from "@clerk/clerk-react";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 const SocketContext = createContext();
 
@@ -11,44 +11,61 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
+  // ✅ Connect socket only once per session
   const connectSocket = useCallback(async () => {
     if (socket || !user) return;
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const token = await getToken();
-    if (!token) return;
+    const API_URL = import.meta.env.VITE_API_URL?.replace(/\/api$/, "") || "http://localhost:5000";
+    let token = null;
+
+    try {
+      token = await getToken({ template: "default" });
+      if (!token) token = await getToken();
+    } catch (err) {
+      console.error("❌ Error fetching Clerk token:", err);
+      return;
+    }
+
+    if (!token) {
+      console.warn("⚠️ No Clerk token found, socket not connected.");
+      return;
+    }
 
     const newSocket = io(API_URL, {
       withCredentials: true,
-      transports: ['websocket', 'polling'],
-      auth: { token }, // ✅ token sent to backend
+      transports: ["websocket", "polling"],
+      auth: { token }, // ✅ token sent in auth handshake
     });
 
+    // ✅ Event listeners
     newSocket.on("connect", () => {
       console.log("✅ Socket connected:", newSocket.id);
       setIsConnected(true);
     });
 
-    newSocket.on('order_updated', (payload) => {
-      console.log('🧾 Order updated:', payload);
-      toast.success(`Order ${payload.orderId} updated: ${payload.paymentStatus || payload.status}`);
-    });
-
-    newSocket.on('server_status', (payload) => {
-      console.log('🩺 Server status:', payload);
-    });
-
-    newSocket.on('auth_error', (err) => {
-      console.warn('⚠️ Socket auth error:', err?.message || err);
-    });
-
-    newSocket.on("disconnect", () => {
-      console.log("🔴 Socket disconnected");
+    newSocket.on("disconnect", (reason) => {
+      console.log("🔴 Socket disconnected:", reason);
       setIsConnected(false);
     });
 
     newSocket.on("connect_error", (err) => {
       console.error("⚠️ Socket connection error:", err.message);
+      toast.error("Socket connection failed");
+    });
+
+    newSocket.on("auth_error", (err) => {
+      console.warn("⚠️ Socket auth error:", err?.message || err);
+      toast.error("Authentication error on socket connection");
+    });
+
+    // ✅ Server events
+    newSocket.on("order_updated", (payload) => {
+      console.log("🧾 Order updated:", payload);
+      toast.success(`Order ${payload.orderId} updated: ${payload.paymentStatus || payload.status}`);
+    });
+
+    newSocket.on("server_status", (payload) => {
+      console.log("🩺 Server status:", payload);
     });
 
     setSocket(newSocket);
@@ -62,6 +79,7 @@ export const SocketProvider = ({ children }) => {
     }
   }, [socket]);
 
+  // ✅ Emit events safely
   const joinChat = useCallback(
     (chatId) => {
       if (socket && chatId) {
@@ -72,23 +90,31 @@ export const SocketProvider = ({ children }) => {
     [socket]
   );
 
-  const sendMessage = useCallback((messageData) => {
-    if (socket && isConnected) {
-      socket.emit('sendMessage', messageData);
-    }
-  }, [socket, isConnected]);
+  const sendMessage = useCallback(
+    (messageData) => {
+      if (socket && isConnected) {
+        socket.emit("sendMessage", messageData);
+      }
+    },
+    [socket, isConnected]
+  );
 
-  const sendTyping = useCallback((data) => {
-    if (socket && isConnected) {
-      socket.emit('typing', data);
-    }
-  }, [socket, isConnected]);
+  const sendTyping = useCallback(
+    (data) => {
+      if (socket && isConnected) {
+        socket.emit("typing", data);
+      }
+    },
+    [socket, isConnected]
+  );
 
+  // ✅ Auto manage connection based on user state
   useEffect(() => {
     if (user && !socket) connectSocket();
     if (!user && socket) disconnectSocket();
   }, [user, socket, connectSocket, disconnectSocket]);
 
+  // ✅ Cleanup on unmount
   useEffect(() => {
     return () => {
       if (socket) socket.disconnect();
@@ -96,15 +122,17 @@ export const SocketProvider = ({ children }) => {
   }, [socket]);
 
   return (
-    <SocketContext.Provider value={{ 
-      socket, 
-      isConnected, 
-      connectSocket, 
-      disconnectSocket, 
-      joinChat,
-      sendMessage,
-      sendTyping
-    }}>
+    <SocketContext.Provider
+      value={{
+        socket,
+        isConnected,
+        connectSocket,
+        disconnectSocket,
+        joinChat,
+        sendMessage,
+        sendTyping,
+      }}
+    >
       {children}
     </SocketContext.Provider>
   );

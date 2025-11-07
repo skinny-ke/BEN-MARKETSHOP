@@ -1,14 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useUser, useAuth, useOrganization } from '@clerk/clerk-react';
 import axios from '../api/axios';
+import { setClerkTokenGetter } from '../api/axios'; // ✅ added import
 
 const ClerkContext = createContext();
 
 export const useClerkContext = () => {
   const context = useContext(ClerkContext);
-  if (!context) {
-    throw new Error('useClerkContext must be used within a ClerkProvider');
-  }
+  if (!context) throw new Error('useClerkContext must be used within a ClerkProvider');
   return context;
 };
 
@@ -16,12 +15,18 @@ export const ClerkProvider = ({ children }) => {
   const { user, isLoaded: userLoaded } = useUser();
   const { getToken } = useAuth();
   const { organization, isLoaded: orgLoaded } = useOrganization();
+
   const [userRole, setUserRole] = useState('user');
   const [isAdmin, setIsAdmin] = useState(false);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch user data from backend
+  // ✅ Register Clerk token getter globally for axios
+  useEffect(() => {
+    if (getToken) setClerkTokenGetter(getToken);
+  }, [getToken]);
+
+  // ✅ Fetch user data from backend
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user || !userLoaded) {
@@ -32,7 +37,6 @@ export const ClerkProvider = ({ children }) => {
       try {
         const token = await getToken();
         if (!token) {
-          // No token available, use Clerk data only
           const role = user.publicMetadata?.role || 'user';
           setUserRole(role);
           setIsAdmin(role === 'admin');
@@ -40,17 +44,14 @@ export const ClerkProvider = ({ children }) => {
           return;
         }
 
-        const response = await axios.get('/api/users/profile');
-        
-        // Handle response.data.data structure
+        const response = await axios.get('/users/profile'); // ✅ removed redundant /api prefix
         const userInfo = response.data.data || response.data;
-        
+
         setUserData(userInfo);
         setUserRole(userInfo.role || 'user');
         setIsAdmin(userInfo.role === 'admin');
       } catch (error) {
         console.error('Error fetching user data:', error);
-        // Fallback to Clerk public metadata
         const role = user.publicMetadata?.role || 'user';
         setUserRole(role);
         setIsAdmin(role === 'admin');
@@ -62,7 +63,7 @@ export const ClerkProvider = ({ children }) => {
     fetchUserData();
   }, [user, userLoaded, getToken]);
 
-  // Get auth token for API calls
+  // ✅ Expose helper functions and state
   const getAuthToken = async () => {
     try {
       return await getToken();
@@ -72,16 +73,11 @@ export const ClerkProvider = ({ children }) => {
     }
   };
 
-  // Update user role (admin only)
   const updateUserRole = async (userId, newRole) => {
-    if (!isAdmin) {
-      throw new Error('Only admins can update user roles');
-    }
-    
+    if (!isAdmin) throw new Error('Only admins can update user roles');
+
     try {
-      const response = await axios.put(`/api/admin/users/${userId}/role`, {
-        role: newRole
-      });
+      const response = await axios.put(`/admin/users/${userId}/role`, { role: newRole });
       return response.data;
     } catch (error) {
       console.error('Error updating user role:', error);
@@ -99,12 +95,8 @@ export const ClerkProvider = ({ children }) => {
     orgId: organization?.id || null,
     loading,
     getAuthToken,
-    updateUserRole
+    updateUserRole,
   };
 
-  return (
-    <ClerkContext.Provider value={value}>
-      {children}
-    </ClerkContext.Provider>
-  );
+  return <ClerkContext.Provider value={value}>{children}</ClerkContext.Provider>;
 };

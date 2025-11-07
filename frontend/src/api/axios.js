@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { toast } from 'sonner';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -10,14 +10,13 @@ const api = axios.create({
   },
 });
 
-// Function to get Clerk token (will be set by components)
+// ✅ Function to set Clerk token getter
 let getClerkToken = null;
-
 export const setClerkTokenGetter = (tokenGetter) => {
   getClerkToken = tokenGetter;
 };
 
-// Request interceptor to add Clerk auth token
+// ✅ Interceptor to add token automatically
 api.interceptors.request.use(
   async (config) => {
     if (getClerkToken) {
@@ -26,12 +25,13 @@ api.interceptors.request.use(
         try {
           token = await getClerkToken({ template: 'default' });
         } catch (_) {}
-        if (!token) {
-          token = await getClerkToken();
-        }
+        if (!token) token = await getClerkToken();
+
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
           config.headers['Clerk-Auth-Token'] = token;
+          // 👇 Optional: debug to confirm token is valid
+          // console.log('🪪 Attaching token:', token.slice(0, 25) + '...');
         }
       } catch (error) {
         console.error('Error getting Clerk token:', error);
@@ -39,19 +39,18 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle auth errors
+// ✅ Handle API errors gracefully
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
+  (error) => {
     const status = error.response?.status;
     const msg = error.response?.data?.message || error.message || 'Request failed';
+
     if (status === 401) {
-      toast.error('Session expired. Please sign in again.');
+      toast.error('Session expired or unauthorized. Please sign in again.');
     } else if (status === 429) {
       toast.warning('Too many requests. Please slow down.');
     } else if (status >= 500) {
@@ -59,6 +58,7 @@ api.interceptors.response.use(
     } else {
       toast.error(msg);
     }
+
     return Promise.reject(error);
   }
 );
