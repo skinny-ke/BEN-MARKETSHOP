@@ -1,14 +1,14 @@
 /* filepath: /components/WishlistButton.jsx */
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { useUser } from '@clerk/clerk-react';
+import { useClerkContext } from '../context/ClerkContext';
 import { HeartIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { toast } from 'sonner';
 import axios from '../api/axios';
 
 const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
-  const { user } = useUser();
+  const { userData } = useClerkContext();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -16,8 +16,8 @@ const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
   useEffect(() => {
     const initializeWishlist = async () => {
       try {
-        if (user) {
-          const res = await axios.get(`/api/wishlist/${user.id}`);
+        if (userData?.id) {
+          const res = await axios.get(`/wishlist/${userData.id}`);
           const userWishlist = res.data.wishlist || [];
           setIsWishlisted(userWishlist.some(item => item._id === product._id));
         } else {
@@ -29,7 +29,7 @@ const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
       }
     };
     initializeWishlist();
-  }, [user, product._id]);
+  }, [userData?.id, product._id]);
 
   /** ✅ Toggle wishlist status */
   const toggleWishlist = useCallback(async () => {
@@ -37,13 +37,13 @@ const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
     setIsLoading(true);
 
     try {
-      if (user) {
+      if (userData?.id) {
         if (isWishlisted) {
-          await axios.delete(`/api/wishlist/${user.id}/${product._id}`);
+          await axios.delete(`/wishlist/${userData.id}/${product._id}`);
           setIsWishlisted(false);
           toast.success('Removed from wishlist');
         } else {
-          await axios.post(`/api/wishlist/${user.id}`, { product });
+          await axios.post(`/wishlist/${userData.id}`, { product });
           setIsWishlisted(true);
           toast.success('Added to wishlist');
         }
@@ -67,7 +67,7 @@ const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [isWishlisted, isLoading, product, user]);
+  }, [isWishlisted, isLoading, product, userData?.id]);
 
   return (
     <motion.button

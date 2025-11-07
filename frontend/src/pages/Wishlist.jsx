@@ -6,20 +6,20 @@ import WishlistButton from '../components/WishlistButton';
 import { useShop } from '../context/ShopContext';
 import { toast } from 'sonner';
 import api from '../api/axios';
-import { useUser } from '@clerk/clerk-react';
+import { useClerkContext } from '../context/ClerkContext';
 
 export default function Wishlist() {
   const { addToCart } = useShop();
-  const { user } = useUser();
+  const { userData } = useClerkContext();
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // ✅ Fetch wishlist from backend
   const fetchWishlist = async () => {
-    if (!user) return;
+    if (!userData?.id) return;
     setLoading(true);
     try {
-      const res = await api.get(`/api/wishlist/${user.id}`, { withCredentials: true });
+      const res = await api.get(`/wishlist/${userData.id}`);
       setWishlist(res.data.wishlist || []);
     } catch (err) {
       console.error('Error fetching wishlist:', err);
@@ -31,12 +31,12 @@ export default function Wishlist() {
 
   useEffect(() => {
     fetchWishlist();
-  }, [user]);
+  }, [userData?.id]);
 
   // ✅ Remove item from wishlist
   const removeFromWishlist = async (productId) => {
     try {
-      await api.delete(`/api/wishlist/${user.id}/${productId}`, { withCredentials: true });
+      await api.delete(`/wishlist/${userData.id}/${productId}`);
       setWishlist(prev => prev.filter(p => p._id !== productId));
       toast.success('Removed from wishlist');
     } catch (err) {
@@ -56,7 +56,7 @@ export default function Wishlist() {
     if (!window.confirm('Are you sure you want to clear your wishlist?')) return;
     try {
       for (let product of wishlist) {
-        await api.delete(`/api/wishlist/${user.id}/${product._id}`, { withCredentials: true });
+        await api.delete(`/wishlist/${userData.id}/${product._id}`);
       }
       setWishlist([]);
       toast.success('Wishlist cleared');
