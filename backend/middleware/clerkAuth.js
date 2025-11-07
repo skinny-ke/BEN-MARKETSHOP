@@ -1,4 +1,4 @@
-const { createClerkClient } = require('@clerk/backend');
+const { createClerkClient, verifyToken } = require('@clerk/backend');
 const jwt = require('jsonwebtoken');
 const User = require('../Models/User');
 require('dotenv').config();
@@ -13,14 +13,17 @@ const clerkClient = createClerkClient({
  */
 const verifyClerkToken = async (token) => {
   if (!token) throw new Error('Missing token');
-  return await clerkClient.verifyToken(token);
+  
+  // ✅ use verifyToken directly (not from clerkClient)
+  const { payload } = await verifyToken(token, {
+    secretKey: process.env.CLERK_SECRET_KEY,
+  });
+
+  return payload;
 };
 
 /**
  * Combined Clerk + Local JWT authentication middleware.
- * - Verifies Clerk token first.
- * - Falls back to local JWT (for manual admin access or testing).
- * - Attaches user data from MongoDB to `req.user`.
  */
 const clerkAuth = async (req, res, next) => {
   try {
@@ -44,10 +47,8 @@ const clerkAuth = async (req, res, next) => {
 
       user = await User.findOne({ clerkId });
 
-      // If not found in MongoDB, fetch Clerk data and create user
       if (!user) {
         const clerkUser = await clerkClient.users.getUser(clerkId);
-
         user = await User.create({
           clerkId,
           name:
@@ -65,15 +66,12 @@ const clerkAuth = async (req, res, next) => {
 
         console.log(`✅ Created new Clerk user in MongoDB: ${user.email}`);
       } else {
-        // Update last login + org if changed
         user.lastLogin = new Date();
         if (orgId) user.orgId = orgId;
         await user.save();
       }
 
-      // -------------------------------
-      // 👑 Auto-elevate to Admin (Bootstrap)
-      // -------------------------------
+      // 👑 Admin auto-elevation
       const adminList = (process.env.ADMIN_EMAILS || '')
         .split(',')
         .map((e) => e.trim().toLowerCase())
@@ -89,32 +87,31 @@ const clerkAuth = async (req, res, next) => {
         console.log(`👑 Elevated ${user.email} to admin (via ADMIN_EMAILS)`);
       }
 
-      // ✅ Attach Clerk user
       req.user = {
         id: user._id.toString(),
-        clerkId: user.clerkId || null,
+        clerkId: user.clerkId,
         email: user.email,
         name: user.name,
         role: user.role,
-        orgId: user.orgId || null,
+        orgId: user.orgId,
         image: user.image,
       };
 
       return next();
 
-      // -------------------------------
-      // 2️⃣  Fallback: Local JWT (manual admins)
-      // -------------------------------
     } catch (clerkError) {
       console.warn('⚠️ Clerk verification failed:', clerkError.message);
 
+      // -------------------------------
+      // 2️⃣ Fallback: Local JWT
+      // -------------------------------
       try {
         const decoded = jwt.verify(
           token,
           process.env.JWT_SECRET || 'defaultSecret'
         );
-        user = await User.findById(decoded.id);
 
+        user = await User.findById(decoded.id);
         if (!user) {
           return res
             .status(401)
@@ -143,34 +140,25 @@ const clerkAuth = async (req, res, next) => {
   }
 };
 
-/**
- * Restricts access to admin users.
- */
 const requireAdmin = (req, res, next) => {
-  if (!req.user) {
+  if (!req.user)
     return res
       .status(401)
       .json({ success: false, message: 'Authentication required' });
-  }
 
-  if (req.user.role !== 'admin') {
+  if (req.user.role !== 'admin')
     return res
       .status(403)
       .json({ success: false, message: 'Admin privileges required' });
-  }
 
   next();
 };
 
-/**
- * Restricts access to any authenticated user.
- */
 const requireAuth = (req, res, next) => {
-  if (!req.user) {
+  if (!req.user)
     return res
       .status(401)
       .json({ success: false, message: 'Authentication required' });
-  }
   next();
 };
 
