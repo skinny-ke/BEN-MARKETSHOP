@@ -221,7 +221,7 @@ const messageCounters = new Map();
 const THROTTLE_WINDOW_MS = 10000; // 10s
 const MAX_MESSAGES_PER_WINDOW = process.env.SOCKET_MAX_MSGS ? Number(process.env.SOCKET_MAX_MSGS) : 10;
 
-// Socket auth middleware
+// Socket auth middleware - using Clerk's official verification
 io.use(async (socket, next) => {
   try {
     // Prefer auth token in handshake.auth (recommended) then headers
@@ -234,8 +234,13 @@ io.use(async (socket, next) => {
       return next(new Error('Unauthorized'));
     }
 
-    const decoded = await verifyClerkToken(authToken);
-    const clerkId = decoded?.sub || decoded?.userId || null;
+    // Use Clerk's official token verification
+    const { verifyToken } = require('@clerk/backend');
+    const payload = await verifyToken(authToken, {
+      secretKey: process.env.CLERK_SECRET_KEY,
+    });
+
+    const clerkId = payload.sub;
 
     if (!clerkId) {
       logger.warn('⚠️ Socket auth: invalid token payload');
