@@ -63,7 +63,10 @@ export default function Checkout() {
     );
   }
 
-  const total = cart.reduce((s, i) => s + (i.price * (i.qty || 1)), 0);
+  const subtotal = cart.reduce((s, i) => s + (i.price * (i.qty || 1)), 0);
+  const VAT_RATE = 0.16;
+  const vatAmount = subtotal * VAT_RATE;
+  const total = subtotal + vatAmount;
   const itemCount = cart.reduce((s, i) => s + (i.qty || 1), 0);
 
   const onSubmit = async (data) => {
@@ -82,25 +85,41 @@ export default function Checkout() {
           quantity: item.qty || 1
         })),
         totalAmount: total,
-        shippingAddress: `${data.address}, ${data.city}`
+        shippingAddress: {
+          fullName: user.fullName || user.firstName + ' ' + user.lastName,
+          phone: data.phone,
+          street: data.address,
+          city: data.city,
+          county: '',
+          postalCode: '',
+          country: 'Kenya'
+        },
+        paymentMethod: data.paymentMethod || 'mpesa'
       };
 
       const orderResponse = await orderService.createOrder(orderData);
-      const order = orderResponse.data;
+      const order = orderResponse.data.order || orderResponse.data;
 
-      await mpesaService.stkPush({
-        amount: total,
-        phone: data.phone,
-        account: order._id
-      });
-      
-      setPaymentStep('success');
-      clearCart();
-      toast.success('Payment initiated! Check your phone for M-Pesa prompt.');
-      
+      // Only initiate M-Pesa payment if selected
+      if (data.paymentMethod === 'mpesa') {
+        await mpesaService.stkPush({
+          amount: total,
+          phone: data.phone,
+          account: order._id
+        });
+        setPaymentStep('success');
+        clearCart();
+        toast.success('Payment initiated! Check your phone for M-Pesa prompt.');
+      } else {
+        // Cash on delivery
+        setPaymentStep('success');
+        clearCart();
+        toast.success('Order placed successfully! Pay cash on delivery.');
+      }
+
     } catch (error) {
       console.error('Checkout error:', error);
-      toast.error(error.response?.data?.message || 'Payment failed. Please try again.');
+      toast.error(error.response?.data?.message || 'Order failed. Please try again.');
       setPaymentStep('form');
     } finally {
       setLoading(false);
@@ -159,14 +178,14 @@ export default function Checkout() {
               <FaMapMarkerAlt className="text-green-600" />
               Delivery Information
             </h2>
-            
+
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phone Number (M-Pesa)
                 </label>
                 <input
-                  {...register("phone", { 
+                  {...register("phone", {
                     required: "Phone number is required",
                     pattern: {
                       value: /^254[0-9]{9}$/,
@@ -225,6 +244,36 @@ export default function Checkout() {
                 <div className="absolute top-0 right-0 text-gray-400 text-xs mt-1 mr-1" title="Optional instructions">?</div>
               </div>
 
+              {/* Payment Method Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Method
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="mpesa"
+                      {...register("paymentMethod")}
+                      defaultChecked
+                      className="mr-2"
+                    />
+                    <FaPhone className="mr-2 text-green-600" />
+                    M-Pesa (Mobile Money)
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="cod"
+                      {...register("paymentMethod")}
+                      className="mr-2"
+                    />
+                    <FaCreditCard className="mr-2 text-blue-600" />
+                    Cash on Delivery
+                  </label>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
@@ -238,7 +287,7 @@ export default function Checkout() {
                 ) : (
                   <>
                     <FaCreditCard />
-                    Pay with M-Pesa
+                    Complete Order
                   </>
                 )}
               </button>
@@ -294,7 +343,11 @@ export default function Checkout() {
             <div className="mt-6 pt-4 border-t border-gray-200">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-600">Items ({itemCount})</span>
-                <span className="font-semibold">KSh {total.toLocaleString()}</span>
+                <span className="font-semibold">KSh {subtotal.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-600">VAT (16%)</span>
+                <span className="font-semibold">KSh {vatAmount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-600">Delivery</span>
@@ -309,10 +362,13 @@ export default function Checkout() {
             <div className="mt-6 p-4 bg-green-50 rounded-lg">
               <div className="flex items-center gap-2 text-green-800">
                 <FaPhone />
-                <span className="font-semibold">M-Pesa Payment</span>
+                <span className="font-semibold">Payment Information</span>
               </div>
               <p className="text-sm text-green-700 mt-1">
-                You'll receive an M-Pesa prompt on {phone || 'your phone'} to complete payment.
+                {watch('paymentMethod') === 'mpesa'
+                  ? `You'll receive an M-Pesa prompt on ${phone || 'your phone'} to complete payment.`
+                  : 'You will pay cash when your order is delivered to your address.'
+                }
               </p>
             </div>
           </div>

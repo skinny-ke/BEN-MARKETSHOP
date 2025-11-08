@@ -23,14 +23,23 @@ exports.createOrder = async (req, res, next) => {
       return res.status(400).json({ message: 'Shipping address is incomplete' });
     }
 
+    // ✅ Calculate VAT (16% in Kenya)
+    const VAT_RATE = 0.16;
+    const subtotal = totalAmount;
+    const vatAmount = subtotal * VAT_RATE;
+    const totalWithVAT = subtotal + vatAmount;
+
     // ✅ Create the order
     const order = new Order({
       user: req.user ? req.user.id : null, // guest or logged-in user
       items,
-      totalAmount,
+      subtotal,
+      vatAmount,
+      totalAmount: totalWithVAT,
       shippingAddress,
-      paymentMethod: paymentMethod || 'Pending',
-      status: 'Pending',
+      paymentMethod: paymentMethod || 'cod', // Default to cash on delivery
+      status: 'pending',
+      paymentStatus: paymentMethod === 'mpesa' ? 'pending' : 'pending', // M-Pesa starts as pending, COD as pending
     });
 
     await order.save();

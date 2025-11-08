@@ -17,7 +17,7 @@ const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
     const initializeWishlist = async () => {
       try {
         if (userData?.id) {
-          const res = await axios.get(`/wishlist/${userData.id}`);
+          const res = await axios.get(`/api/wishlist/${userData.id}`);
           const userWishlist = res.data.wishlist || [];
           setIsWishlisted(userWishlist.some(item => item._id === product._id));
         } else {
@@ -39,11 +39,11 @@ const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
     try {
       if (userData?.id) {
         if (isWishlisted) {
-          await axios.delete(`/wishlist/${userData.id}/${product._id}`);
+          await axios.delete(`/api/wishlist/${userData.id}/${product._id}`);
           setIsWishlisted(false);
           toast.success('Removed from wishlist');
         } else {
-          await axios.post(`/wishlist/${userData.id}`, { product });
+          await axios.post(`/api/wishlist/${userData.id}`, { product });
           setIsWishlisted(true);
           toast.success('Added to wishlist');
         }

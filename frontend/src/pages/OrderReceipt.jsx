@@ -78,9 +78,19 @@ export default function OrderReceipt() {
             </div>
           ))}
         </div>
-        <div className="mt-4 flex items-center justify-between">
-          <p className="opacity-70">Total</p>
-          <p className="font-semibold"><Currency value={data.totalAmount} /></p>
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="opacity-70">Subtotal</p>
+            <p className="font-medium"><Currency value={data.subtotal || data.totalAmount} /></p>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="opacity-70">VAT (16%)</p>
+            <p className="font-medium"><Currency value={data.vatAmount || 0} /></p>
+          </div>
+          <div className="flex items-center justify-between border-t pt-2">
+            <p className="font-semibold">Total</p>
+            <p className="font-semibold"><Currency value={data.totalAmount} /></p>
+          </div>
         </div>
       </div>
     </div>

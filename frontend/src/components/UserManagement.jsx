@@ -48,6 +48,20 @@ const UserManagement = () => {
     }
   };
 
+  const handleToggleUserStatus = async (user) => {
+    try {
+      const newStatus = !user.isActive;
+      await axios.put(`/api/admin/users/${user._id}/toggle`, { isActive: newStatus });
+      setUsers(prev =>
+        prev.map(u => (u._id === user._id ? { ...u, isActive: newStatus } : u))
+      );
+      toast.success(`✅ User ${newStatus ? 'activated' : 'deactivated'} successfully`);
+    } catch (error) {
+      console.error('❌ Error updating user status:', error);
+      toast.error('Failed to update user status');
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="text-center py-10">
@@ -128,6 +142,11 @@ const UserManagement = () => {
                       >
                         {user.role}
                       </span>
+                      {!user.isActive && (
+                        <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                          Inactive
+                        </span>
+                      )}
                     </div>
                   </td>
 
@@ -140,15 +159,27 @@ const UserManagement = () => {
                   </td>
 
                   <td className="px-6 py-4">
-                    <button
-                      onClick={() => {
-                        setEditingUser(user);
-                        setNewRole(user.role);
-                      }}
-                      className="text-indigo-600 hover:text-indigo-800"
-                    >
-                      <PencilIcon className="h-5 w-5" />
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => {
+                          setEditingUser(user);
+                          setNewRole(user.role);
+                        }}
+                        className="text-indigo-600 hover:text-indigo-800"
+                        title="Edit Role"
+                      >
+                        <PencilIcon className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => handleToggleUserStatus(user)}
+                        className={`${
+                          user.isActive ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'
+                        }`}
+                        title={user.isActive ? 'Deactivate User' : 'Activate User'}
+                      >
+                        {user.isActive ? '🚫' : '✅'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -49,6 +49,8 @@ const OrderSchema = new mongoose.Schema({
       price: { type: Number, required: true }, // store product price at purchase time
     },
   ],
+  subtotal: { type: Number, required: true },
+  vatAmount: { type: Number, default: 0 },
   totalAmount: { type: Number, required: true },
   shippingAddress: { type: shippingAddressSchema, required: true },
   paymentMethod: { 

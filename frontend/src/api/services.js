@@ -33,6 +33,13 @@ export const mpesaService = {
   stkPush: (paymentData) => api.post('/api/mpesa/stkpush', paymentData),
 };
 
+// Wishlist services
+export const wishlistService = {
+  getWishlist: (userId) => api.get(`/api/wishlist/${userId}`),
+  addToWishlist: (userId, product) => api.post(`/api/wishlist/${userId}`, { product }),
+  removeFromWishlist: (userId, productId) => api.delete(`/api/wishlist/${userId}/${productId}`),
+};
+
 // Upload services
 export const uploadService = {
   uploadImage: (imageData) => api.post('/api/upload/image', { image: imageData }),

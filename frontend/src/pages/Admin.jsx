@@ -13,6 +13,7 @@ export default function Admin() {
   const { isAdmin, userRole, loading: authLoading } = useClerkContext();
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [analyticsData, setAnalyticsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showProductForm, setShowProductForm] = useState(false);
@@ -34,12 +35,12 @@ export default function Admin() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch products
       const productsRes = await productService.getProducts();
       const productsData = productsRes.data?.data || productsRes.data || productsRes;
       setProducts(Array.isArray(productsData) ? productsData : []);
-      
+
       // Fetch orders from admin endpoint
       const axios = require("../api/axios").default;
       try {
@@ -49,6 +50,17 @@ export default function Admin() {
       } catch (orderError) {
         console.error("Error fetching orders:", orderError);
         setOrders([]);
+      }
+
+      // Fetch analytics data
+      try {
+        const analyticsRes = await axios.get('/api/analytics/dashboard');
+        const analyticsData = analyticsRes.data?.data;
+        if (analyticsData) {
+          setAnalyticsData(analyticsData);
+        }
+      } catch (analyticsError) {
+        console.error("Error fetching analytics:", analyticsError);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -115,7 +127,14 @@ export default function Admin() {
   };
 
   // Stats calculation
-  const stats = {
+  const stats = analyticsData ? {
+    totalProducts: analyticsData.overview.totalProducts,
+    totalOrders: analyticsData.overview.totalOrders,
+    totalRevenue: analyticsData.overview.totalRevenue,
+    pendingOrders: analyticsData.sales.statusDistribution.find(s => s._id === 'pending')?.count || 0,
+    netProfit: analyticsData.financial.netProfit,
+    profitMargin: analyticsData.financial.profitMargin,
+  } : {
     totalProducts: products.length,
     totalOrders: orders.length,
     totalRevenue: orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0),
@@ -186,6 +205,22 @@ export default function Admin() {
               color="text-yellow-500"
             />
             <StatCard label="Pending Orders" value={stats.pendingOrders} icon={FaUsers} color="text-red-500" />
+            {stats.netProfit !== undefined && (
+              <StatCard
+                label="Net Profit"
+                value={`KSh ${stats.netProfit.toLocaleString()}`}
+                icon={FaChartBar}
+                color={stats.netProfit >= 0 ? "text-green-500" : "text-red-500"}
+              />
+            )}
+            {stats.profitMargin !== undefined && (
+              <StatCard
+                label="Profit Margin"
+                value={`${stats.profitMargin.toFixed(1)}%`}
+                icon={FaChartBar}
+                color={stats.profitMargin >= 0 ? "text-green-500" : "text-red-500"}
+              />
+            )}
           </div>
 
           {/* Tabs */}
@@ -340,25 +375,59 @@ export default function Admin() {
                   <h2 className="text-2xl font-bold text-gray-800 mb-6">Dashboard Overview</h2>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="bg-gray-50 rounded-lg p-6">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Selling Products</h3>
                       <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span className="text-sm text-gray-600">System started successfully</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="text-sm text-gray-600">Database connected</span>
-                        </div>
+                        {analyticsData?.sales?.topProducts?.slice(0, 5).map((product, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">{product.name}</span>
+                            <span className="text-sm font-semibold text-gray-800">{product.totalSold} sold</span>
+                          </div>
+                        )) || (
+                          <div className="text-sm text-gray-500">No sales data available</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Low Stock Alerts</h3>
+                      <div className="space-y-3">
+                        {analyticsData?.inventory?.lowStock?.slice(0, 5).map((product, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">{product.name}</span>
+                            <span className="text-sm font-semibold text-red-600">{product.stock} left</span>
+                          </div>
+                        )) || (
+                          <div className="text-sm text-gray-500">No low stock items</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Monthly Sales Trend</h3>
+                      <div className="space-y-3">
+                        {analyticsData?.sales?.monthly?.slice(-6).map((month, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">
+                              {new Date(month._id.year, month._id.month - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                            </span>
+                            <span className="text-sm font-semibold text-gray-800">KSh {month.revenue.toLocaleString()}</span>
+                          </div>
+                        )) || (
+                          <div className="text-sm text-gray-500">No sales trend data</div>
+                        )}
                       </div>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
                       <div className="space-y-2">
-                        <button className="w-full text-left px-4 py-2 bg-white rounded-lg hover:bg-gray-100 transition-colors">
+                        <button
+                          onClick={() => setActiveTab("products")}
+                          className="w-full text-left px-4 py-2 bg-white rounded-lg hover:bg-gray-100 transition-colors"
+                        >
                           Add New Product
                         </button>
-                        <button className="w-full text-left px-4 py-2 bg-white rounded-lg hover:bg-gray-100 transition-colors">
+                        <button
+                          onClick={() => setActiveTab("orders")}
+                          className="w-full text-left px-4 py-2 bg-white rounded-lg hover:bg-gray-100 transition-colors"
+                        >
                           View All Orders
                         </button>
                         <button className="w-full text-left px-4 py-2 bg-white rounded-lg hover:bg-gray-100 transition-colors">

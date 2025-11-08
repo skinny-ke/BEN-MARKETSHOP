@@ -189,5 +189,53 @@ router.get('/categories', clerkAuth, requireAdmin, async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /api/analytics/dashboard
+ * @desc    Get comprehensive analytics dashboard data
+ * @access  Private/Admin
+ */
+router.get('/dashboard', clerkAuth, requireAdmin, async (req, res) => {
+  try {
+    const { getAnalyticsData } = require('../services/analyticsService');
+    const analyticsData = await getAnalyticsData();
+
+    res.json({
+      success: true,
+      data: analyticsData
+    });
+  } catch (error) {
+    console.error('Error fetching analytics dashboard:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch analytics dashboard' });
+  }
+});
+
+/**
+ * @route   GET /api/analytics/recommendations/:userId
+ * @desc    Get product recommendations for a user
+ * @access  Private
+ */
+router.get('/recommendations/:userId', clerkAuth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { limit = 5 } = req.query;
+
+    // Check if user can access their own recommendations or is admin
+    if (req.user.id !== userId && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+
+    const { getProductRecommendations } = require('../services/analyticsService');
+    const recommendations = await getProductRecommendations(userId, parseInt(limit));
+
+    res.json({
+      success: true,
+      data: recommendations
+    });
+  } catch (error) {
+    console.error('Error fetching recommendations:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch recommendations' });
+  }
+});
+
 module.exports = router;
 

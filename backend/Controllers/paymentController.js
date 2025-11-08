@@ -44,11 +44,23 @@ exports.updateOrderStatus = async (req, res, next) => {
             const nextStock = Math.max(0, current - qty);
             if (nextStock !== current) {
               product.stock = nextStock;
+              // Check for low stock alert (less than 5 items)
+              if (nextStock <= 5 && nextStock > 0) {
+                console.log(`⚠️ LOW STOCK ALERT: ${product.name} has only ${nextStock} items remaining`);
+                // TODO: Send email alert to admin
+              } else if (nextStock === 0) {
+                console.log(`🚨 OUT OF STOCK: ${product.name} is now out of stock`);
+                // TODO: Send email alert to admin
+              }
               await product.save();
             }
-          } catch (_) {}
+          } catch (stockError) {
+            console.error(`❌ Error updating stock for product ${productId}:`, stockError);
+          }
         }
-      } catch (_) {}
+      } catch (stockError) {
+        console.error('❌ Error processing stock updates:', stockError);
+      }
 
       // Send payment success email
       try {
