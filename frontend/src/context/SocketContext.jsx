@@ -19,8 +19,7 @@ export const SocketProvider = ({ children }) => {
     let token = null;
 
     try {
-      token = await getToken({ template: "default" });
-      if (!token) token = await getToken();
+      token = await getToken();
     } catch (err) {
       console.error("❌ Error fetching Clerk token:", err);
       return;
