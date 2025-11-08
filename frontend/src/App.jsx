@@ -9,6 +9,7 @@ import {
 } from "@clerk/clerk-react";
 import { SocketProvider } from "./context/SocketContext";
 import { ClerkProvider as CustomClerkProvider } from "./context/ClerkContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import { setClerkTokenGetter } from "./api/axios";
 
 import Navbar from "./components/Navbar";
@@ -55,12 +56,13 @@ const TokenSetup = () => {
 
 function App() {
   return (
-    <ClerkProvider publishableKey={clerkPubKey}>
-      <CustomClerkProvider>
-        <TokenSetup />
+    <ThemeProvider>
+      <ClerkProvider publishableKey={clerkPubKey}>
+        <CustomClerkProvider>
+          <TokenSetup />
 
-        <SocketProvider>
-          <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950">
+          <SocketProvider>
+            <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
             <Navbar />
             <MobileNav />
 
@@ -151,6 +153,7 @@ function App() {
         </SocketProvider>
       </CustomClerkProvider>
     </ClerkProvider>
+    </ThemeProvider>
   );
 }
 

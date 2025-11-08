@@ -4,55 +4,83 @@ const { clerkAuth } = require('../middleware/clerkAuth');
 
 const router = express.Router();
 
-// ✅ Get user's wishlist (protected)
-router.get('/:userId', clerkAuth, async (req, res) => {
+// ✅ Get user's wishlist (protected) - uses Clerk userId
+router.get('/', clerkAuth, async (req, res) => {
   try {
-    const wishlist = await Wishlist.findOne({ userId: req.params.userId });
-    res.json(wishlist || { wishlist: [] });
+    const clerkId = req.auth.userId;
+    const wishlist = await Wishlist.findOne({ clerkId }).populate('products.productId');
+    if (!wishlist) {
+      return res.json({ success: true, products: [] });
+    }
+    res.json({ success: true, products: wishlist.products });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error fetching wishlist' });
+    console.error('Error fetching wishlist:', err);
+    res.status(500).json({ success: false, message: 'Error fetching wishlist' });
   }
 });
 
-// ✅ Add item to wishlist (protected)
-router.post('/:userId', clerkAuth, async (req, res) => {
+// ✅ Add item to wishlist (protected) - uses Clerk userId
+router.post('/', clerkAuth, async (req, res) => {
   try {
-    const { product } = req.body;
-    let wishlist = await Wishlist.findOne({ userId: req.params.userId });
+    const clerkId = req.auth.userId;
+    const { productId } = req.body;
+
+    if (!productId) {
+      return res.status(400).json({ success: false, message: 'Product ID is required' });
+    }
+
+    let wishlist = await Wishlist.findOne({ clerkId });
 
     if (!wishlist) {
-      wishlist = new Wishlist({ userId: req.params.userId, wishlist: [] });
+      wishlist = new Wishlist({ clerkId, products: [] });
     }
 
-    if (!wishlist.wishlist.some(p => p._id.toString() === product._id.toString())) {
-      wishlist.wishlist.push(product);
-      await wishlist.save();
+    // Check if product already exists in wishlist
+    const existingProduct = wishlist.products.find(p => p.productId.toString() === productId);
+    if (existingProduct) {
+      return res.status(400).json({ success: false, message: 'Product already in wishlist' });
     }
 
-    res.json(wishlist);
+    // Add product to wishlist
+    wishlist.products.push({
+      productId,
+      name: req.body.name || '',
+      price: req.body.price || 0,
+      image: req.body.image || '',
+      addedAt: new Date()
+    });
+
+    await wishlist.save();
+    await wishlist.populate('products.productId');
+
+    res.json({ success: true, products: wishlist.products });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error adding to wishlist' });
+    console.error('Error adding to wishlist:', err);
+    res.status(500).json({ success: false, message: 'Error adding to wishlist' });
   }
 });
 
-// ✅ Remove item from wishlist (protected)
-router.delete('/:userId/:productId', clerkAuth, async (req, res) => {
+// ✅ Remove item from wishlist (protected) - uses Clerk userId
+router.delete('/:productId', clerkAuth, async (req, res) => {
   try {
-    const { userId, productId } = req.params;
-    const wishlist = await Wishlist.findOne({ userId });
+    const clerkId = req.auth.userId;
+    const { productId } = req.params;
 
-    if (wishlist) {
-      wishlist.wishlist = wishlist.wishlist.filter(p => p._id.toString() !== productId.toString());
-      await wishlist.save();
+    const wishlist = await Wishlist.findOne({ clerkId });
+
+    if (!wishlist) {
+      return res.status(404).json({ success: false, message: 'Wishlist not found' });
     }
 
-    res.json(wishlist);
+    // Remove product from wishlist
+    wishlist.products = wishlist.products.filter(p => p.productId.toString() !== productId);
+    await wishlist.save();
+
+    res.json({ success: true, products: wishlist.products });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error removing from wishlist' });
+    console.error('Error removing from wishlist:', err);
+    res.status(500).json({ success: false, message: 'Error removing from wishlist' });
   }
 });
 
-module.exports = router; // ✅ Proper CommonJS export
+module.exports = router;

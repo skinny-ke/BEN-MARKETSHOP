@@ -173,7 +173,7 @@ export default function Admin() {
 
   // Reusable StatCard
   const StatCard = ({ label, value, icon: Icon, color }) => (
-    <motion.div whileHover={{ scale: 1.05 }} className="bg-white rounded-xl shadow-lg p-6">
+    <motion.div whileHover={{ scale: 1.05 }} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600">{label}</p>
@@ -185,13 +185,13 @@ export default function Admin() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <div className="container mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Admin Dashboard</h1>
-            <p className="text-gray-600">Manage your store and monitor performance</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 transition-colors duration-300">
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Admin Dashboard</h1>
+            <p className="text-gray-600 dark:text-gray-400">Manage your store and monitor performance</p>
           </div>
 
           {/* Stats Cards */}
@@ -224,7 +224,7 @@ export default function Admin() {
           </div>
 
           {/* Tabs */}
-          <div className="bg-white rounded-xl shadow-lg mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg mb-8 transition-colors duration-300">
             <div className="border-b border-gray-200">
               <nav className="flex space-x-8 px-6">
                 {[
@@ -444,7 +444,7 @@ export default function Admin() {
           {/* Product Form Modal */}
           {showProductForm && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 w-96">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96 transition-colors duration-300">
                 <h3 className="text-lg font-semibold mb-4">{editingProduct ? "Edit Product" : "Add Product"}</h3>
                 <div className="space-y-3">
                   {[

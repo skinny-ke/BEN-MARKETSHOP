@@ -4,7 +4,7 @@ import Logo from "./Logo";
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-300 mt-16">
+    <footer className="bg-gray-900 dark:bg-gray-950 text-gray-300 dark:text-gray-400 mt-16 transition-colors duration-300">
       {/* Newsletter Section */}
       <div className="bg-gradient-to-r from-green-600 to-green-700 py-12">
         <div className="container mx-auto px-4 text-center">

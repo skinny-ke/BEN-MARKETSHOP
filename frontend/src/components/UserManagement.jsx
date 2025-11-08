@@ -83,11 +83,11 @@ const UserManagement = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
-        <span className="text-sm text-gray-500">Total Users: {users.length}</span>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">User Management</h2>
+        <span className="text-sm text-gray-500 dark:text-gray-400">Total Users: {users.length}</span>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden transition-colors duration-300">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gray-50">
@@ -190,7 +190,7 @@ const UserManagement = () => {
 
       {editingUser && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg p-6 w-96 shadow-lg">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96 shadow-lg transition-colors duration-300">
             <h3 className="text-lg font-semibold mb-4 text-gray-800">Update User Role</h3>
             <div className="space-y-4">
               <p className="text-sm text-gray-600">

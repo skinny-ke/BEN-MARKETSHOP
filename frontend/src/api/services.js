@@ -1,11 +1,9 @@
 import api from './axios';
 
-// Auth services
+// Auth services - Clerk handles authentication, these are for profile management
 export const authService = {
-  register: (userData) => api.post('/api/auth/register', userData),
-  login: (credentials) => api.post('/api/auth/login', credentials),
-  logout: (userId) => api.post('/api/auth/logout', { userId }),
-  refreshToken: (token) => api.post('/api/auth/refresh/refresh', { token }),
+  getProfile: () => api.get('/api/users/profile'),
+  logout: () => api.post('/api/auth/logout'),
 };
 
 // Product services
@@ -33,11 +31,11 @@ export const mpesaService = {
   stkPush: (paymentData) => api.post('/api/mpesa/stkpush', paymentData),
 };
 
-// Wishlist services
+// Wishlist services - now uses Clerk userId
 export const wishlistService = {
-  getWishlist: (userId) => api.get(`/api/wishlist/${userId}`),
-  addToWishlist: (userId, product) => api.post(`/api/wishlist/${userId}`, { product }),
-  removeFromWishlist: (userId, productId) => api.delete(`/api/wishlist/${userId}/${productId}`),
+  getWishlist: () => api.get('/api/wishlist'),
+  addToWishlist: (productId) => api.post('/api/wishlist', { productId }),
+  removeFromWishlist: (productId) => api.delete(`/api/wishlist/${productId}`),
 };
 
 // Upload services
