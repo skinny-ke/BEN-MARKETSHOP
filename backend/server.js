@@ -227,7 +227,8 @@ io.use(async (socket, next) => {
     // Prefer auth token in handshake.auth (recommended) then headers
     const authToken = socket.handshake.auth?.token
       || socket.handshake.headers['clerk-auth-token']
-      || socket.handshake.headers['authorization']?.replace('Bearer ', '');
+      || socket.handshake.headers['authorization']?.replace('Bearer ', '')
+      || socket.handshake.headers['authorization'];
 
     if (!authToken) {
       logger.warn('⚠️ Socket auth: missing token');
@@ -308,26 +309,26 @@ io.on('connection', async (socket) => {
     messageCounters.set(socket.id, { count: 0, ts: Date.now() });
 
     // handle room joins
-    socket.on('join_room', (roomId) => {
-      if (!roomId) return;
-      socket.join(roomId);
-      logger.info(`👤 Socket ${socket.id} joined room ${roomId}`);
+    socket.on('joinChat', (chatId) => {
+      if (!chatId) return;
+      socket.join(chatId);
+      logger.info(`👤 Socket ${socket.id} joined chat ${chatId}`);
     });
 
-    // handle typing events (broadcast to room)
+    // handle typing events (broadcast to chat)
     socket.on('typing', (data) => {
       try {
-        const { roomId, isTyping, senderId } = data;
-        if (roomId) {
-          socket.to(roomId).emit('userTyping', { senderId: senderId || socket.clerkId, isTyping });
+        const { receiverId, isTyping, senderId } = data;
+        if (receiverId) {
+          socket.to(receiverId).emit('userTyping', { senderId: senderId || socket.clerkId, isTyping });
         }
       } catch (err) {
         logger.warn('⚠️ typing handler error:', err.message);
       }
     });
 
-    // handle send_message with persistence + basic throttle
-    socket.on('send_message', async (data) => {
+    // handle sendMessage with persistence + basic throttle
+    socket.on('sendMessage', async (data) => {
       try {
         // throttle
         const counter = messageCounters.get(socket.id) || { count: 0, ts: Date.now() };
@@ -345,10 +346,10 @@ io.on('connection', async (socket) => {
           return;
         }
 
-        const { roomId, content, messageType = 'text', metadata = {} } = data;
+        const { chatId, content, messageType = 'text', metadata = {} } = data;
         const senderId = socket.clerkId;
 
-        if (!roomId || !senderId || !content) {
+        if (!chatId || !senderId || !content) {
           socket.emit('send_error', { message: 'Invalid message data' });
           return;
         }
@@ -357,7 +358,7 @@ io.on('connection', async (socket) => {
         let savedMessage = null;
         try {
           const messageDoc = new Message({
-            chatId: roomId,
+            chatId,
             senderId,
             content,
             messageType,
@@ -371,7 +372,7 @@ io.on('connection', async (socket) => {
 
         const emitPayload = {
           _id: savedMessage?._id || null,
-          chatId: roomId,
+          chatId,
           content,
           senderId,
           messageType,
@@ -379,10 +380,10 @@ io.on('connection', async (socket) => {
           createdAt: savedMessage?.createdAt || new Date(),
         };
 
-        io.to(roomId).emit('receive_message', emitPayload);
-        logger.info(`💬 Message from ${senderId} in room ${roomId}`);
+        io.to(chatId).emit('receiveMessage', emitPayload);
+        logger.info(`💬 Message from ${senderId} in chat ${chatId}`);
       } catch (err) {
-        logger.error('❌ send_message handler failed:', err.message);
+        logger.error('❌ sendMessage handler failed:', err.message);
       }
     });
 

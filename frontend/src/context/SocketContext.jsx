@@ -34,6 +34,10 @@ export const SocketProvider = ({ children }) => {
       withCredentials: true,
       transports: ["websocket", "polling"],
       auth: { token }, // ✅ token sent in auth handshake
+      extraHeaders: {
+        'Authorization': `Bearer ${token}`,
+        'Clerk-Auth-Token': token,
+      },
     });
 
     // ✅ Event listeners
@@ -55,6 +59,11 @@ export const SocketProvider = ({ children }) => {
     newSocket.on("auth_error", (err) => {
       console.warn("⚠️ Socket auth error:", err?.message || err);
       toast.error("Authentication error on socket connection");
+    });
+
+    newSocket.on("unauthorized", (err) => {
+      console.warn("⚠️ Socket unauthorized:", err?.message || err);
+      toast.error("Unauthorized socket connection");
     });
 
     // ✅ Server events
@@ -79,7 +88,7 @@ export const SocketProvider = ({ children }) => {
   }, [socket]);
 
   // ✅ Emit events safely
-  const joinChat = useCallback(
+  const joinChatRoom = useCallback(
     (chatId) => {
       if (socket && chatId) {
         socket.emit("joinChat", chatId);
@@ -107,6 +116,16 @@ export const SocketProvider = ({ children }) => {
     [socket, isConnected]
   );
 
+  const joinChat = useCallback(
+    (chatId) => {
+      if (socket && chatId) {
+        socket.emit("joinChat", chatId);
+        console.log(`💬 Joined chat room: ${chatId}`);
+      }
+    },
+    [socket]
+  );
+
   // ✅ Auto manage connection based on user state
   useEffect(() => {
     if (user && !socket) connectSocket();
@@ -127,7 +146,7 @@ export const SocketProvider = ({ children }) => {
         isConnected,
         connectSocket,
         disconnectSocket,
-        joinChat,
+        joinChat: joinChatRoom,
         sendMessage,
         sendTyping,
       }}

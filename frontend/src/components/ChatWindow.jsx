@@ -30,7 +30,9 @@ const ChatWindow = ({
     if (!socket || !isConnected) return;
 
     const handleReceiveMessage = (newMessage) => {
-      onNewMessage(newMessage);
+      if (newMessage.chatId === chatId) {
+        onNewMessage(newMessage);
+      }
     };
 
     const handleUserTyping = (data) => {
@@ -55,7 +57,7 @@ const ChatWindow = ({
       socket.off("userTyping", handleUserTyping);
       clearTimeout(typingTimeoutRef.current);
     };
-  }, [socket, isConnected, onNewMessage, currentUserId]);
+  }, [socket, isConnected, onNewMessage, currentUserId, chatId]);
 
   /** Handle sending a new message */
   const handleSendMessage = (e) => {
@@ -64,14 +66,16 @@ const ChatWindow = ({
 
     const messageData = {
       chatId,
-      senderId: currentUserId,
-      receiverId,
       content: message.trim(),
-      timestamp: new Date().toISOString(),
+      messageType: 'text',
     };
 
     sendMessage(messageData);
-    onNewMessage(messageData);
+    onNewMessage({
+      ...messageData,
+      senderId: currentUserId,
+      timestamp: new Date().toISOString(),
+    });
     setMessage("");
 
     // Stop typing indicator
@@ -84,9 +88,9 @@ const ChatWindow = ({
     setMessage(value);
 
     if (value.trim()) {
-      sendTyping({ receiverId, isTyping: true });
+      sendTyping({ receiverId, isTyping: true, senderId: currentUserId });
     } else {
-      sendTyping({ receiverId, isTyping: false });
+      sendTyping({ receiverId, isTyping: false, senderId: currentUserId });
     }
   };
 
