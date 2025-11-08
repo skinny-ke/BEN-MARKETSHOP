@@ -73,7 +73,7 @@ router.get('/product/:productId', async (req, res) => {
 router.post('/', clerkAuth, async (req, res) => {
   try {
     const { productId, rating, title, comment, images } = req.body;
-    const userId = req.user.id;
+    const userId = req.auth.userId;
     const userName = req.user.name || req.user.firstName + ' ' + req.user.lastName;
     const userAvatar = req.user.imageUrl || '';
 
@@ -124,7 +124,7 @@ router.put('/:reviewId', clerkAuth, async (req, res) => {
   try {
     const { reviewId } = req.params;
     const { rating, title, comment, images } = req.body;
-    const userId = req.user.id;
+    const userId = req.auth.userId;
 
     const review = await Review.findOne({ _id: reviewId, userId });
     if (!review) {
@@ -157,7 +157,7 @@ router.put('/:reviewId', clerkAuth, async (req, res) => {
 router.delete('/:reviewId', clerkAuth, async (req, res) => {
   try {
     const { reviewId } = req.params;
-    const userId = req.user.id;
+    const userId = req.auth.userId;
     const isAdmin = req.user.role === 'admin';
 
     const review = await Review.findById(reviewId);
@@ -192,7 +192,7 @@ router.delete('/:reviewId', clerkAuth, async (req, res) => {
 router.post('/:reviewId/helpful', clerkAuth, async (req, res) => {
   try {
     const { reviewId } = req.params;
-    const userId = req.user.id;
+    const userId = req.auth.userId;
 
     const review = await Review.findById(reviewId);
     if (!review) {
@@ -277,7 +277,7 @@ router.post('/:reviewId/response', clerkAuth, requireAuth, async (req, res) => {
     }
 
     review.response = {
-      adminId: req.user.id,
+      adminId: req.auth.userId,
       adminName: req.user.name || 'Admin',
       message,
       timestamp: new Date()

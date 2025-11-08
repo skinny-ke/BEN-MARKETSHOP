@@ -102,7 +102,7 @@ const deactivateUser = async (req, res) => {
     }
 
     // Prevent self-deactivation
-    if (user._id.toString() === req.user.id) {
+    if (user._id.toString() === req.auth.userId) {
       return res.status(400).json({
         success: false,
         message: 'Admins cannot deactivate themselves'

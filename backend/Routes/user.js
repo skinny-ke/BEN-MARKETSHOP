@@ -10,7 +10,7 @@ const User = require('../Models/User');
  */
 router.get('/me', clerkAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.auth.userId).select('-password');
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     res.status(200).json({
@@ -41,7 +41,7 @@ router.get('/me', clerkAuth, async (req, res) => {
  */
 router.get('/profile', clerkAuth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.auth.userId).select('-password');
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     res.status(200).json({
@@ -75,7 +75,7 @@ router.put('/profile', clerkAuth, async (req, res) => {
     const { name, image } = req.body;
 
     const updatedUser = await User.findByIdAndUpdate(
-      req.user.id,
+      req.auth.userId,
       {
         ...(name && { name }),
         ...(image && { image }),
@@ -121,7 +121,7 @@ router.get('/:userId', clerkAuth, async (req, res) => {
   try {
     const { userId } = req.params;
 
-    if (req.user.id !== userId && req.user.role !== 'admin') {
+    if (req.auth.userId !== userId && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 

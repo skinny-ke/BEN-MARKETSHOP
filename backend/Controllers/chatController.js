@@ -6,7 +6,7 @@ const User = require('../Models/User');
 const getOrCreateChat = async (req, res) => {
   try {
     const { userId } = req.params;
-    const currentUserId = req.user.id;
+    const currentUserId = req.auth.userId;
 
     // Find existing chat between users
     let chat = await Chat.findOne({
@@ -38,7 +38,7 @@ const getOrCreateChat = async (req, res) => {
 // Get user's chats
 const getUserChats = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.auth.userId;
 
     const chats = await Chat.find({
       users: userId,
@@ -64,7 +64,7 @@ const getUserChats = async (req, res) => {
 const getChatMessages = async (req, res) => {
   try {
     const { chatId } = req.params;
-    const userId = req.user.id;
+    const userId = req.auth.userId;
 
     // Verify user is part of this chat
     const chat = await Chat.findOne({
@@ -100,7 +100,7 @@ const getChatMessages = async (req, res) => {
 const sendMessage = async (req, res) => {
   try {
     const { chatId, content, receiverId } = req.body;
-    const senderId = req.user.id;
+    const senderId = req.auth.userId;
 
     // Verify user is part of this chat
     const chat = await Chat.findOne({
@@ -149,7 +149,7 @@ const sendMessage = async (req, res) => {
 const markAsRead = async (req, res) => {
   try {
     const { chatId } = req.params;
-    const userId = req.user.id;
+    const userId = req.auth.userId;
 
     await Message.updateMany(
       { 

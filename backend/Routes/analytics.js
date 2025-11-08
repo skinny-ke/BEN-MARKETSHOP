@@ -220,7 +220,7 @@ router.get('/recommendations/:userId', clerkAuth, async (req, res) => {
     const { limit = 5 } = req.query;
 
     // Check if user can access their own recommendations or is admin
-    if (req.user.id !== userId && req.user.role !== 'admin') {
+    if (req.auth.userId !== userId && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 

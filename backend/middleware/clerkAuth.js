@@ -1,5 +1,4 @@
-const { createClerkClient, verifyToken } = require('@clerk/backend');
-const jwt = require('jsonwebtoken');
+const { createClerkClient, verifyToken, ClerkExpressRequireAuth } = require('@clerk/backend');
 const User = require('../Models/User');
 require('dotenv').config();
 
@@ -26,38 +25,32 @@ const verifyClerkToken = async (token) => {
 };
 
 /**
- * Combined Clerk + Local JWT authentication middleware.
+ * Clerk-only authentication middleware using ClerkExpressRequireAuth.
+ * This replaces the combined JWT + Clerk middleware.
  */
 const clerkAuth = async (req, res, next) => {
   try {
-    const rawAuth =
-      req.header('Authorization') ||
-      req.header('authorization') ||
-      req.header('Clerk-Auth-Token') ||
-      '';
+    // Use Clerk's official middleware
+    const clerkMiddleware = ClerkExpressRequireAuth({
+      secretKey: process.env.CLERK_SECRET_KEY,
+    });
 
-    const token = rawAuth.replace('Bearer ', '').trim();
+    // Apply Clerk middleware
+    await new Promise((resolve, reject) => {
+      clerkMiddleware(req, res, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
 
-    if (!token) {
-      return res.status(401).json({ success: false, message: 'No token provided' });
-    }
+    // If we get here, Clerk auth passed
+    const clerkId = req.auth.userId;
+    const orgId = req.auth.orgId || null;
 
-    let user;
-
-    // -------------------------------
-    // 1️⃣ Try verifying via Clerk
-    // -------------------------------
-    try {
-      const decoded = await verifyClerkToken(token);
-      if (!decoded) {
-        throw new Error('Clerk token verification returned null');
-      }
-      const clerkId = decoded.sub;
-      const orgId = decoded.org_id || null;
-
-      // find or create the user
-      user = await User.findOne({ clerkId });
-      if (!user) {
+    // Find or create the user in our database
+    let user = await User.findOne({ clerkId });
+    if (!user) {
+      try {
         const clerkUser = await clerkClient.users.getUser(clerkId);
         user = await User.create({
           clerkId,
@@ -74,77 +67,54 @@ const clerkAuth = async (req, res, next) => {
           isActive: true,
         });
         console.log(`✅ Created new Clerk user in MongoDB: ${user.email}`);
-      } else {
-        user.lastLogin = new Date();
-        if (orgId) user.orgId = orgId;
-        await user.save();
+      } catch (clerkApiError) {
+        console.warn('⚠️ Could not fetch Clerk user details:', clerkApiError.message);
+        // Create user with minimal info
+        user = await User.create({
+          clerkId,
+          name: 'User',
+          email: `user-${clerkId}@unknown.com`,
+          role: 'user',
+          orgId,
+          image: '',
+          isActive: true,
+        });
       }
-
-      // 👑 Admin auto-elevation
-      const adminList = (process.env.ADMIN_EMAILS || '')
-        .split(',')
-        .map((e) => e.trim().toLowerCase())
-        .filter(Boolean);
-
-      if (
-        user.email &&
-        adminList.includes(user.email.toLowerCase()) &&
-        user.role !== 'admin'
-      ) {
-        user.role = 'admin';
-        await user.save();
-        console.log(`👑 Elevated ${user.email} to admin`);
-      }
-
-      req.user = {
-        id: user._id.toString(),
-        clerkId: user.clerkId,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        orgId: user.orgId,
-        image: user.image,
-      };
-
-      return next();
-    } catch (clerkError) {
-      console.warn('⚠️ Clerk verification failed:', clerkError.message);
-      // Continue to fallback JWT verification
+    } else {
+      user.lastLogin = new Date();
+      if (orgId) user.orgId = orgId;
+      await user.save();
     }
 
-    // -------------------------------
-    // 2️⃣ Fallback: Local JWT
-    // -------------------------------
-    try {
-      const decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET || 'defaultSecret'
-      );
+    // 👑 Admin auto-elevation
+    const adminList = (process.env.ADMIN_EMAILS || '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
 
-      user = await User.findById(decoded.id);
-      if (!user) {
-        return res
-          .status(401)
-          .json({ success: false, message: 'Invalid local user token' });
-      }
-
-      req.user = {
-        id: user._id.toString(),
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      };
-
-      console.log(`🔐 Local JWT auth success: ${user.email}`);
-      return next();
-    } catch (jwtError) {
-      console.error('❌ Auth verification failed:', jwtError.message);
-      return res
-        .status(401)
-        .json({ success: false, message: 'Invalid or expired token' });
+    if (
+      user.email &&
+      adminList.includes(user.email.toLowerCase()) &&
+      user.role !== 'admin'
+    ) {
+      user.role = 'admin';
+      await user.save();
+      console.log(`👑 Elevated ${user.email} to admin`);
     }
+
+    req.user = {
+      id: user._id.toString(),
+      clerkId: user.clerkId,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      orgId: user.orgId,
+      image: user.image,
+    };
+
+    return next();
   } catch (err) {
-    console.error('❌ Clerk/local auth error:', err.message);
+    console.error('❌ Clerk auth error:', err.message);
     return res
       .status(401)
       .json({ success: false, message: 'Authentication failed' });
@@ -152,12 +122,12 @@ const clerkAuth = async (req, res, next) => {
 };
 
 const requireAdmin = (req, res, next) => {
-  if (!req.user)
+  if (!req.auth || !req.auth.userId)
     return res
       .status(401)
       .json({ success: false, message: 'Authentication required' });
 
-  if (req.user.role !== 'admin')
+  if (!req.user || req.user.role !== 'admin')
     return res
       .status(403)
       .json({ success: false, message: 'Admin privileges required' });
@@ -166,7 +136,7 @@ const requireAdmin = (req, res, next) => {
 };
 
 const requireAuth = (req, res, next) => {
-  if (!req.user)
+  if (!req.auth || !req.auth.userId)
     return res
       .status(401)
       .json({ success: false, message: 'Authentication required' });

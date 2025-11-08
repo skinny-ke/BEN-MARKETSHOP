@@ -11,7 +11,7 @@ const User = require('../Models/User');
  */
 router.get('/me', clerkAuth, async (req, res) => {
   try {
-    const user = await User.findOne({ clerkId: req.user.id });
+    const user = await User.findOne({ clerkId: req.auth.userId });
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found in database' });
     }

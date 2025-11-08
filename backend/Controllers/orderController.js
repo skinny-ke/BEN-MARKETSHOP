@@ -31,7 +31,7 @@ exports.createOrder = async (req, res, next) => {
 
     // ✅ Create the order
     const order = new Order({
-      user: req.user ? req.user.id : null, // guest or logged-in user
+      user: req.user ? req.auth.userId : null, // guest or logged-in user
       items,
       subtotal,
       vatAmount,
@@ -80,7 +80,7 @@ exports.getOrder = async (req, res, next) => {
     }
 
     // ✅ Restrict access (user can only view their own order)
-    if (req.user && order.user && order.user.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (req.user && order.user && order.user.toString() !== req.auth.userId && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied' });
     }
 

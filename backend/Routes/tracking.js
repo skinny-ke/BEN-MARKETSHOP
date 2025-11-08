@@ -20,7 +20,7 @@ router.get('/:orderId', clerkAuth, async (req, res) => {
     }
 
     // Only owner or admin can access
-    if (order.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (order.user._id.toString() !== req.auth.userId && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Access denied',

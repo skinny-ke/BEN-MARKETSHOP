@@ -168,7 +168,6 @@ app.use('/api/upload', require('./Routes/upload'));
 app.use('/api/auth', require('./Routes/auth'));
 app.use('/api/mpesa', require('./Routes/mpesa'));
 app.use('/api/payment', require('./Routes/payment'));
-app.use('/api/auth/refresh', require('./Routes/auth_refresh'));
 app.use('/api/chats', require('./Routes/chat'));
 app.use('/api/users', require('./Routes/user'));
 app.use('/api/admin', require('./Routes/admin'));
