@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { StarIcon, UserIcon, ThumbsUpIcon, FlagIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { StarIcon, UserIcon, HandThumbUpIcon, FlagIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { toast } from 'sonner';
 import api from '../api/axios';
@@ -355,7 +355,7 @@ const ProductReviews = ({ productId }) => {
                 onClick={() => markHelpful(review._id)}
                 className="flex items-center space-x-1 text-sm text-gray-600 hover:text-green-600"
               >
-                <ThumbsUpIcon className="w-4 h-4" />
+                <HandThumbUpIcon className="w-4 h-4" />
                 <span>Helpful ({review.helpfulCount || 0})</span>
               </button>
 
