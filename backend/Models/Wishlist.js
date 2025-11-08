@@ -1,16 +1,20 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const wishlistSchema = new mongoose.Schema({
-  userId: { type: String, required: true, index: true }, // ✅ indexed for faster queries
-  wishlist: [
+  clerkId: { type: String, required: true, index: true, unique: true }, // Clerk user ID
+  products: [
     {
-      _id: { type: String, required: true }, // product ID
+      productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
       name: { type: String, required: true },
-      price: { type: Number, default: 0 },
+      price: { type: Number, required: true },
       image: { type: String, default: '' },
-      quantity: { type: Number, default: 1 },
+      addedAt: { type: Date, default: Date.now }
     }
   ],
 }, { timestamps: true });
 
-export default mongoose.model('Wishlist', wishlistSchema);
+// Indexes
+wishlistSchema.index({ clerkId: 1 });
+wishlistSchema.index({ 'products.productId': 1 });
+
+module.exports = mongoose.model('Wishlist', wishlistSchema);

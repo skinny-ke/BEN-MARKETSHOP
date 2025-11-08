@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
-  // Clerk users have this; local users (like admin) don’t
+  // Clerk user ID - required for all users now
   clerkId: {
     type: String,
+    required: true,
     unique: true,
-    sparse: true, // ✅ allows null values without violating unique constraint
     index: true
   },
   name: {
@@ -18,21 +18,12 @@ const UserSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
   },
-  password: {
-    type: String, // only for local (non-Clerk) accounts
-    select: false
-  },
   role: {
     type: String,
     enum: ['user', 'admin'],
     default: 'user',
   },
-  orgId: {
-    type: String,
-    default: null,
-    index: true
-  },
-  profileImage: {
+  image: {
     type: String,
     default: ''
   },
@@ -41,6 +32,10 @@ const UserSchema = new mongoose.Schema({
     default: true
   },
   lastLogin: {
+    type: Date,
+    default: Date.now
+  },
+  createdAt: {
     type: Date,
     default: Date.now
   }
@@ -63,7 +58,7 @@ UserSchema.statics.findOrCreateFromClerk = async function(clerkUser) {
           clerkUser.fullName ||
           `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
         email: clerkUser.emailAddresses[0]?.emailAddress,
-        profileImage: clerkUser.imageUrl || '',
+        image: clerkUser.imageUrl || '',
         role: 'user',
       });
       await user.save();
@@ -72,7 +67,7 @@ UserSchema.statics.findOrCreateFromClerk = async function(clerkUser) {
         clerkUser.fullName ||
         `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim();
       user.email = clerkUser.emailAddresses[0]?.emailAddress;
-      user.profileImage = clerkUser.imageUrl || '';
+      user.image = clerkUser.imageUrl || '';
       user.lastLogin = new Date();
       await user.save();
     }

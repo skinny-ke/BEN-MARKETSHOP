@@ -9,13 +9,6 @@ export const useShop = () => useContext(ShopContext);
 export const ShopProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('user')) || null;
-    } catch {
-      return null;
-    }
-  });
   const [cart, setCart] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('bm_cart')) || [];
@@ -35,11 +28,6 @@ export const ShopProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('bm_cart', JSON.stringify(cart));
   }, [cart]);
-
-  // Persist user to localStorage
-  useEffect(() => {
-    localStorage.setItem('user', JSON.stringify(user));
-  }, [user]);
 
   const fetchProducts = async () => {
     try {
@@ -87,31 +75,15 @@ export const ShopProvider = ({ children }) => {
     toast.success('Cart cleared');
   };
 
-  const login = (userData) => {
-    setUser(userData);
-    toast.success(`Welcome back, ${userData.name || 'User'}!`);
-  };
-
-  const logout = () => {
-    setUser(null);
-    clearCart();
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    toast.success('Logged out successfully');
-  };
-
   return (
     <ShopContext.Provider value={{
       products,
       cart,
-      user,
       loading,
       addToCart,
       updateCartItem,
       removeFromCart,
       clearCart,
-      login,
-      logout,
       fetchProducts
     }}>
       {children}
