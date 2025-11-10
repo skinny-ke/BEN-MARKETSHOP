@@ -51,7 +51,7 @@ export const ClerkProvider = ({ children }) => {
         setUserRole(userInfo.role || 'user');
         setIsAdmin(userInfo.role === 'admin');
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error fetching user data:', error?.response?.data || error?.message || error);
         const role = user.publicMetadata?.role || 'user';
         setUserRole(role);
         setIsAdmin(role === 'admin');

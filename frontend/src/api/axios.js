@@ -48,6 +48,14 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const msg = error.response?.data?.message || error.message || 'Request failed';
 
+    console.error('API Error:', {
+      status,
+      message: msg,
+      url: error.config?.url,
+      method: error.config?.method,
+      fullError: error
+    });
+
     if (status === 401) {
       toast.error('Session expired or unauthorized. Please sign in again.');
     } else if (status === 429) {
