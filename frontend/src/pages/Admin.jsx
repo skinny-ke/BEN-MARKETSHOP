@@ -42,8 +42,8 @@ export default function Admin() {
       setProducts(Array.isArray(productsData) ? productsData : []);
 
       // Fetch orders from admin endpoint
-      const axios = require("../api/axios").default;
       try {
+        const axios = (await import("../api/axios")).default;
         const ordersRes = await axios.get('/api/admin/orders');
         const ordersData = ordersRes.data?.data || ordersRes.data || [];
         setOrders(Array.isArray(ordersData) ? ordersData : []);
@@ -54,6 +54,7 @@ export default function Admin() {
 
       // Fetch analytics data
       try {
+        const axios = (await import("../api/axios")).default;
         const analyticsRes = await axios.get('/api/analytics/dashboard');
         const analyticsData = analyticsRes.data?.data;
         if (analyticsData) {
@@ -61,6 +62,13 @@ export default function Admin() {
         }
       } catch (analyticsError) {
         console.error("Error fetching analytics:", analyticsError);
+        // Set default analytics data if fetch fails
+        setAnalyticsData({
+          overview: { totalProducts: products.length, totalOrders: 0, totalRevenue: 0 },
+          sales: { statusDistribution: [], topProducts: [], monthly: [] },
+          financial: { netProfit: 0, profitMargin: 0 },
+          inventory: { lowStock: [] }
+        });
       }
     } catch (error) {
       console.error("Error fetching data:", error);

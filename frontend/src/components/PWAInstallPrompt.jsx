@@ -26,6 +26,7 @@ export default function PWAInstallPrompt() {
 
     // Handle PWA install prompt for Android / Desktop
     const handleBeforeInstallPrompt = (e) => {
+      console.log('🔔 beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstallPrompt(true);
@@ -60,10 +61,15 @@ export default function PWAInstallPrompt() {
 
   /** 🚀 Trigger install flow (for Android / Desktop) */
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      console.log('❌ No deferred prompt available');
+      return;
+    }
     try {
+      console.log('🚀 Prompting for PWA install...');
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
+      console.log('📱 Install outcome:', outcome);
 
       if (outcome === 'accepted') {
         toast.success('Installing BenMarket app...');

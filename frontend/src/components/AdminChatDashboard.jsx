@@ -59,9 +59,10 @@ const AdminChatDashboard = () => {
     try {
       setLoading(true);
       const response = await chatService.getAllChats();
-      setChats(response.chats || []);
+      setChats(response.chats || response.data?.chats || []);
     } catch (error) {
       console.error("❌ Error loading chats:", error);
+      setChats([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -71,9 +72,10 @@ const AdminChatDashboard = () => {
   const loadMessages = async (chatId) => {
     try {
       const response = await chatService.getChatMessages(chatId);
-      setMessages(response.messages || []);
+      setMessages(response.messages || response.data?.messages || []);
     } catch (error) {
       console.error("❌ Error loading messages:", error);
+      setMessages([]); // Set empty array on error
     }
   };
 
@@ -89,17 +91,31 @@ const AdminChatDashboard = () => {
 
     const messageData = {
       chatId: selectedChat._id,
-      senderId: "admin", // could be replaced with Clerk/JWT user
       content: newMessage.trim(),
-      receiverId: selectedChat.users.find((u) => u.role !== "admin")?._id,
+      messageType: 'text',
+      metadata: {}
     };
 
-    sendMessage(messageData);
-    setMessages((prev) => [
-      ...prev,
-      { ...messageData, createdAt: new Date().toISOString() },
-    ]);
-    setNewMessage("");
+    try {
+      // Send via socket
+      sendMessage(messageData);
+
+      // Also send via API to ensure persistence
+      await chatService.sendMessage(messageData);
+
+      // Optimistically update UI
+      setMessages((prev) => [
+        ...prev,
+        {
+          ...messageData,
+          senderId: "admin",
+          createdAt: new Date().toISOString()
+        },
+      ]);
+      setNewMessage("");
+    } catch (error) {
+      console.error("❌ Error sending message:", error);
+    }
   };
 
   /** 🕒 Formatters */
