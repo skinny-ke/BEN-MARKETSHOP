@@ -171,7 +171,6 @@ const TRANSLATIONS = {
     personalInfo: 'Personal Information',
     accountSettings: 'Account Settings',
     changePassword: 'Change Password',
-    orderHistory: 'Order History',
     addresses: 'Addresses',
 
     // Loyalty
@@ -200,7 +199,6 @@ const TRANSLATIONS = {
 
     // Inventory
     lowStock: 'Low Stock',
-    outOfStock: 'Out of Stock',
     limitedStock: 'Limited Stock',
     stockLevel: 'Stock Level'
   },
@@ -343,7 +341,6 @@ const TRANSLATIONS = {
     personalInfo: 'Maelezo Binafsi',
     accountSettings: 'Mipangilio ya Akaunti',
     changePassword: 'Badilisha Nenosiri',
-    orderHistory: 'Historia ya Oda',
     addresses: 'Anwani',
 
     // Loyalty
@@ -372,7 +369,6 @@ const TRANSLATIONS = {
 
     // Inventory
     lowStock: 'Stocki Ndogo',
-    outOfStock: 'Imekwisha',
     limitedStock: 'Stocki Ndogo',
     stockLevel: 'Kiwango cha Stocki'
   },
@@ -515,7 +511,6 @@ const TRANSLATIONS = {
     personalInfo: 'Informations personnelles',
     accountSettings: 'Paramètres du compte',
     changePassword: 'Changer le mot de passe',
-    orderHistory: 'Historique des commandes',
     addresses: 'Adresses',
 
     // Loyalty
@@ -544,7 +539,6 @@ const TRANSLATIONS = {
 
     // Inventory
     lowStock: 'Stock faible',
-    outOfStock: 'Rupture de stock',
     limitedStock: 'Stock limité',
     stockLevel: 'Niveau de stock'
   },
@@ -687,7 +681,6 @@ const TRANSLATIONS = {
     personalInfo: 'المعلومات الشخصية',
     accountSettings: 'إعدادات الحساب',
     changePassword: 'تغيير كلمة المرور',
-    orderHistory: 'تاريخ الطلبات',
     addresses: 'العناوين',
 
     // Loyalty
@@ -716,7 +709,6 @@ const TRANSLATIONS = {
 
     // Inventory
     lowStock: 'مخزون منخفض',
-    outOfStock: 'غير متوفر',
     limitedStock: 'مخزون محدود',
     stockLevel: 'مستوى المخزون'
   }

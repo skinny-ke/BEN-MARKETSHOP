@@ -174,5 +174,13 @@ export default function Navbar({ products = [] }) {
       </div>
 
     </motion.nav>
+
+    {/* Product Comparison Modal */}
+    <ProductComparison
+      isOpen={false}
+      onClose={() => {}}
+      initialProducts={[]}
+    />
+    </>
   );
 }

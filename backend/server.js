@@ -175,6 +175,7 @@ app.use('/api/tracking', require('./Routes/tracking'));
 app.use('/api/analytics', require('./Routes/analytics'));
 app.use('/api/wishlist', require('./Routes/wishlist')); // ensure route exists
 app.use('/api/reviews', require('./Routes/review'));
+app.use('/api/inventory', require('./Routes/inventory'));
 app.use('/api/email', require('./Routes/email'));
 app.use('/api/notifications', require('./Routes/notifications'));
 app.use('/api/loyalty', require('./Routes/loyalty'));

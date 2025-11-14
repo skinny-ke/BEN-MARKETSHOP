@@ -6,6 +6,7 @@ import { productService } from "../api/services";
 import { useClerkContext } from "../context/ClerkContext";
 import AdminChatDashboard from "../components/AdminChatDashboard";
 import UserManagement from "../components/UserManagement";
+import InventoryDashboard from "../components/InventoryDashboard";
 import { toast } from "sonner";
 
 export default function Admin() {
@@ -239,6 +240,7 @@ export default function Admin() {
                   { id: "dashboard", label: "Dashboard", icon: FaChartBar },
                   { id: "products", label: "Products", icon: FaBox },
                   { id: "orders", label: "Orders", icon: FaShoppingCart },
+                  { id: "inventory", label: "Inventory", icon: FaBox },
                   { id: "users", label: "User Management", icon: FaUserCog },
                   { id: "chat", label: "Customer Chat", icon: FaComments },
                 ].map((tab) => (
@@ -359,6 +361,13 @@ export default function Admin() {
                   ) : (
                     <div> {/* Future orders table goes here */} </div>
                   )}
+                </div>
+              )}
+
+              {/* Inventory Tab */}
+              {activeTab === "inventory" && (
+                <div>
+                  <InventoryDashboard />
                 </div>
               )}
 
