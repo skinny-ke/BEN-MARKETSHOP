@@ -1,4 +1,5 @@
-const { createClerkClient, verifyToken, ClerkExpressRequireAuth } = require('@clerk/backend');
+const { createClerkClient, verifyToken } = require('@clerk/backend');
+const { requireAuth } = require('@clerk/express');
 const User = require('../Models/User');
 require('dotenv').config();
 
@@ -25,27 +26,22 @@ const verifyClerkToken = async (token) => {
 };
 
 /**
- * Clerk-only authentication middleware using ClerkExpressRequireAuth.
+ * Clerk-only authentication middleware using requireAuth from @clerk/express.
  * This replaces the combined JWT + Clerk middleware.
  */
-const clerkAuth = async (req, res, next) => {
-  try {
-    // Use Clerk's official middleware
-    const clerkMiddleware = ClerkExpressRequireAuth({
-      secretKey: process.env.CLERK_SECRET_KEY,
-    });
-
-    // Apply Clerk middleware
-    await new Promise((resolve, reject) => {
-      clerkMiddleware(req, res, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-
-    // If we get here, Clerk auth passed
-    const clerkId = req.auth.userId;
-    const orgId = req.auth.orgId || null;
+const clerkAuth = requireAuth({
+  secretKey: process.env.CLERK_SECRET_KEY,
+  onError: (err, req, res) => {
+    console.error('❌ Clerk auth error:', err.message);
+    return res
+      .status(401)
+      .json({ success: false, message: 'Authentication failed' });
+  },
+  onSuccess: async (req, res, next) => {
+    try {
+      // If we get here, Clerk auth passed
+      const clerkId = req.auth.userId;
+      const orgId = req.auth.orgId || null;
 
     // Find or create the user in our database
     let user = await User.findOne({ clerkId });

@@ -11,6 +11,7 @@
   "dependencies": {
     "@clerk/backend": "^2.19.0",
     "@clerk/clerk-sdk-node": "^5.0.1",
+    "@clerk/express": "^1.7.49",
     "axios": "^1.6.8",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.0",
@@ -29,8 +30,8 @@
     "resend": "^6.2.2",
     "socket.io": "^4.8.1",
     "svix": "^1.80.0",
-    "winston": "^3.18.3",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "winston": "^3.18.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.3"
