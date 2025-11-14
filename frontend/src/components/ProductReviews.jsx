@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { StarIcon, UserIcon, HandThumbUpIcon, FlagIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { StarIcon, UserIcon, HandThumbUpIcon, FlagIcon, ChatBubbleLeftRightIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { toast } from 'sonner';
 import api from '../api/axios';
@@ -15,7 +15,8 @@ const ProductReviews = ({ productId }) => {
   const [newReview, setNewReview] = useState({
     rating: 5,
     title: '',
-    comment: ''
+    comment: '',
+    images: []
   });
   const [submitting, setSubmitting] = useState(false);
   const [sortBy, setSortBy] = useState('createdAt');
@@ -70,7 +71,7 @@ const ProductReviews = ({ productId }) => {
 
       if (response.data.success) {
         toast.success('Review submitted successfully!');
-        setNewReview({ rating: 5, title: '', comment: '' });
+        setNewReview({ rating: 5, title: '', comment: '', images: [] });
         setShowReviewForm(false);
         fetchReviews(1); // Refresh reviews
       }
@@ -246,6 +247,70 @@ const ProductReviews = ({ productId }) => {
                   placeholder="Tell others about your experience with this product"
                   maxLength={1000}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Add Photos (Optional)</label>
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files);
+                      if (files.length > 3) {
+                        toast.error('Maximum 3 images allowed');
+                        return;
+                      }
+                      // Convert to base64 for now (in production, upload to cloud storage)
+                      files.forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          setNewReview(prev => ({
+                            ...prev,
+                            images: [...(prev.images || []), e.target.result]
+                          }));
+                        };
+                        reader.readAsDataURL(file);
+                      });
+                    }}
+                    className="hidden"
+                    id="review-images"
+                  />
+                  <label
+                    htmlFor="review-images"
+                    className="flex items-center justify-center w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 cursor-pointer transition-colors"
+                  >
+                    <div className="text-center">
+                      <PhotoIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">Click to add photos</p>
+                      <p className="text-xs text-gray-400">Max 3 images, 5MB each</p>
+                    </div>
+                  </label>
+
+                  {newReview.images && newReview.images.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {newReview.images.map((image, index) => (
+                        <div key={index} className="relative">
+                          <img
+                            src={image}
+                            alt={`Review ${index + 1}`}
+                            className="w-20 h-20 object-cover rounded border"
+                          />
+                          <button
+                            onClick={() => setNewReview(prev => ({
+                              ...prev,
+                              images: prev.images.filter((_, i) => i !== index)
+                            }))}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                          >
+                            <XMarkIcon className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end space-x-3">

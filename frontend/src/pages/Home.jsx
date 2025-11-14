@@ -4,11 +4,14 @@ import ProductCard from "../components/ProductCard";
 import AdvancedSearch from "../components/AdvancedSearch";
 import Quotes from "../components/Quotes";
 import LoadingSpinner from "../components/LoadingSpinner";
+import RecentlyViewed from "../components/RecentlyViewed";
 import { useShop } from "../context/ShopContext";
+import { useTranslation } from "../context/LanguageContext";
 import { toast } from "sonner";
 
 export default function Home() {
   const { products, loading } = useShop();
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
     category: "",
@@ -102,10 +105,10 @@ export default function Home() {
       >
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
-            Welcome to BenMarket
+            {t('welcomeToBenMarket', 'Welcome to BenMarket')}
           </h1>
           <p className="text-xl md:text-2xl mb-8 opacity-90">
-            Your one-stop shop for quality products
+            {t('yourOneStopShop', 'Your one-stop shop for quality products')}
           </p>
           
           {/* Inspirational Quote */}
@@ -150,6 +153,16 @@ export default function Home() {
             showCategory={true}
             className="max-w-4xl mx-auto"
           />
+        </motion.div>
+
+        {/* Recently Viewed Section */}
+        <motion.div
+          className="mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          <RecentlyViewed maxItems={4} />
         </motion.div>
 
         {/* Products Grid */}

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaShoppingCart, FaArrowLeft, FaStar, FaHeart } from "react-icons/fa";
 import { useShop } from "../context/ShopContext";
+import { useRecentlyViewed } from "../context/RecentlyViewedContext";
 import { productService } from "../api/services";
 import DownloadableContent from "../components/DownloadableContent";
 import ProductReviews from "../components/ProductReviews";
@@ -13,6 +14,7 @@ export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useShop();
+  const { addToRecentlyViewed } = useRecentlyViewed();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
@@ -24,6 +26,8 @@ export default function ProductDetails() {
         setLoading(true);
         const response = await productService.getProduct(id);
         setProduct(response.data);
+        // Add to recently viewed
+        addToRecentlyViewed(response.data);
       } catch (error) {
         console.error("Error fetching product:", error);
         toast.error("Product not found");

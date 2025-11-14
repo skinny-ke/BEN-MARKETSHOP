@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FaShoppingCart, FaEye, FaDownload } from "react-icons/fa";
+import { FaShoppingCart, FaEye, FaDownload, FaBalanceScale } from "react-icons/fa";
 import { useShop } from "../context/ShopContext";
+import { useComparison } from "../context/ComparisonContext";
 import WishlistButton from "./WishlistButton";
 
 export default function ProductCard({ product }) {
   const { addToCart } = useShop();
+  const { addToComparison, isInComparison } = useComparison();
 
   return (
     <motion.div 
@@ -26,12 +28,23 @@ export default function ProductCard({ product }) {
             >
               <FaEye />
             </Link>
-            <button 
+            <button
               onClick={() => addToCart(product)}
               className="bg-green-600 text-white p-2 rounded-full hover:bg-green-700 transition-colors"
               disabled={product.stock === 0}
             >
               <FaShoppingCart />
+            </button>
+            <button
+              onClick={() => addToComparison(product)}
+              className={`p-2 rounded-full transition-colors ${
+                isInComparison(product._id)
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-blue-600 hover:bg-blue-50'
+              }`}
+              title="Compare Product"
+            >
+              <FaBalanceScale />
             </button>
             {product.downloadableFiles?.length > 0 && (
               <div className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors">

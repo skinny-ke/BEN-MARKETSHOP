@@ -29,10 +29,11 @@ export const ShopProvider = ({ children }) => {
     localStorage.setItem('bm_cart', JSON.stringify(cart));
   }, [cart]);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (filters = {}) => {
     try {
       setLoading(true);
-      const productsArray = await productService.getProducts();
+      const response = await productService.getProducts(filters);
+      const productsArray = response.data || [];
       const productsWithDownloads = enhanceProductsWithDownloads(Array.isArray(productsArray) ? productsArray : []);
       setProducts(productsWithDownloads);
     } catch (error) {

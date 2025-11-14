@@ -10,6 +10,9 @@ import {
 import { SocketProvider } from "./context/SocketContext";
 import { ClerkProvider as CustomClerkProvider } from "./context/ClerkContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { LanguageProvider } from "./context/LanguageContext";
+import { ComparisonProvider } from "./context/ComparisonContext";
+import { RecentlyViewedProvider } from "./context/RecentlyViewedContext";
 import { setClerkTokenGetter } from "./api/axios";
 
 import Navbar from "./components/Navbar";
@@ -30,6 +33,7 @@ import Wishlist from "./pages/Wishlist";
 import OrderTracking from "./pages/OrderTracking";
 import OrderReceipt from "./pages/OrderReceipt";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
+import LoyaltyDashboard from "./components/LoyaltyDashboard";
 import Profile from "./pages/Profile";
 import { initAnalytics } from "./services/analytics";
 
@@ -56,12 +60,15 @@ const TokenSetup = () => {
 
 function App() {
   return (
-    <ThemeProvider>
-      <ClerkProvider publishableKey={clerkPubKey}>
-        <CustomClerkProvider>
-          <TokenSetup />
+    <LanguageProvider>
+      <ThemeProvider>
+        <RecentlyViewedProvider>
+          <ComparisonProvider>
+          <ClerkProvider publishableKey={clerkPubKey}>
+            <CustomClerkProvider>
+              <TokenSetup />
 
-          <SocketProvider>
+              <SocketProvider>
             <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
             <Navbar />
             <MobileNav />
@@ -113,6 +120,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/loyalty"
+                  element={
+                    <SignedIn>
+                      <LoyaltyDashboard />
+                    </SignedIn>
+                  }
+                />
+                <Route
                   path="/profile"
                   element={
                     <SignedIn>
@@ -153,8 +168,11 @@ function App() {
         </SocketProvider>
       </CustomClerkProvider>
     </ClerkProvider>
-    </ThemeProvider>
-  );
+  </ComparisonProvider>
+  </RecentlyViewedProvider>
+  </ThemeProvider>
+  </LanguageProvider>
+);
 }
 
 export default App;

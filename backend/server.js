@@ -175,6 +175,9 @@ app.use('/api/tracking', require('./Routes/tracking'));
 app.use('/api/analytics', require('./Routes/analytics'));
 app.use('/api/wishlist', require('./Routes/wishlist')); // ensure route exists
 app.use('/api/reviews', require('./Routes/review'));
+app.use('/api/email', require('./Routes/email'));
+app.use('/api/notifications', require('./Routes/notifications'));
+app.use('/api/loyalty', require('./Routes/loyalty'));
 
 app.get('/health', (req, res) => res.json({ status: 'OK', env: NODE_ENV, uptime: process.uptime() }));
 app.get('/', (req, res) => res.send(`Ben Market API running in ${NODE_ENV} mode 🚀`));

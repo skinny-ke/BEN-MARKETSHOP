@@ -9,8 +9,11 @@ export default function EnhancedSearch({ onSearch, onFilter, products = [], clas
     JSON.parse(localStorage.getItem("filters")) || {
       category: "all",
       priceRange: "all",
+      brand: "all",
       hasDownloads: false,
-      sortBy: "name"
+      featured: false,
+      onSale: false,
+      sortBy: "createdAt"
     }
   );
   const [suggestions, setSuggestions] = useState([]);
@@ -20,6 +23,7 @@ export default function EnhancedSearch({ onSearch, onFilter, products = [], clas
   const suggestionsRef = useRef(null);
 
   const categories = ["all", ...new Set(products.map(p => p.category).filter(Boolean))];
+  const brands = ["all", ...new Set(products.map(p => p.brand).filter(Boolean))];
 
   // Generate search suggestions
   useEffect(() => {
@@ -86,7 +90,15 @@ export default function EnhancedSearch({ onSearch, onFilter, products = [], clas
   };
 
   const clearFilters = () => {
-    const clearedFilters = { category: "all", priceRange: "all", hasDownloads: false, sortBy: "name" };
+    const clearedFilters = {
+      category: "all",
+      priceRange: "all",
+      brand: "all",
+      hasDownloads: false,
+      featured: false,
+      onSale: false,
+      sortBy: "createdAt"
+    };
     setFilters(clearedFilters);
     onFilter(clearedFilters);
   };
@@ -101,11 +113,11 @@ export default function EnhancedSearch({ onSearch, onFilter, products = [], clas
 
   const getSortLabel = (sort) => ({
     "name": "Name A-Z",
-    "price-low": "Price Low to High",
-    "price-high": "Price High to Low",
-    "newest": "Newest First",
+    "price": "Price Low to High",
+    "createdAt": "Newest First",
+    "rating": "Highest Rated",
     "popular": "Most Popular"
-  }[sort] || "Name A-Z");
+  }[sort] || "Newest First");
 
   return (
     <div className={`relative ${className}`}>
@@ -198,10 +210,10 @@ export default function EnhancedSearch({ onSearch, onFilter, products = [], clas
             onChange={(e) => handleFilterChange("sortBy", e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
           >
+            <option value="createdAt">Newest First</option>
             <option value="name">Name A-Z</option>
-            <option value="price-low">Price Low to High</option>
-            <option value="price-high">Price High to Low</option>
-            <option value="newest">Newest First</option>
+            <option value="price">Price Low to High</option>
+            <option value="rating">Highest Rated</option>
             <option value="popular">Most Popular</option>
           </select>
         </div>
@@ -216,7 +228,86 @@ export default function EnhancedSearch({ onSearch, onFilter, products = [], clas
             exit={{ opacity: 0, height: 0 }}
             className="mt-4 p-6 bg-gray-50 rounded-xl border border-gray-200"
           >
-            {/* Filters Content same as your original */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Category Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                <select
+                  value={filters.category}
+                  onChange={(e) => handleFilterChange("category", e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat === "all" ? "All Categories" : cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Brand Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+                <select
+                  value={filters.brand}
+                  onChange={(e) => handleFilterChange("brand", e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  {brands.map(brand => (
+                    <option key={brand} value={brand}>{brand === "all" ? "All Brands" : brand}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Price Range Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                <select
+                  value={filters.priceRange}
+                  onChange={(e) => handleFilterChange("priceRange", e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="all">All Prices</option>
+                  <option value="0-1000">Under KSh 1,000</option>
+                  <option value="1000-5000">KSh 1,000 - 5,000</option>
+                  <option value="5000-10000">KSh 5,000 - 10,000</option>
+                  <option value="10000+">Over KSh 10,000</option>
+                </select>
+              </div>
+
+              {/* Special Filters */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Special</label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={filters.featured}
+                      onChange={(e) => handleFilterChange("featured", e.target.checked)}
+                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Featured</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={filters.onSale}
+                      onChange={(e) => handleFilterChange("onSale", e.target.checked)}
+                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">On Sale</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Clear Filters Button */}
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={clearFilters}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Clear All Filters
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

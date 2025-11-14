@@ -13,8 +13,12 @@ import { useShop } from "../context/ShopContext";
 import Logo from "./Logo";
 import MobileNav from "./MobileNav";
 import { debounce } from "lodash";
-import { StarIcon, XMarkIcon, FunnelIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { StarIcon, XMarkIcon, FunnelIcon, MagnifyingGlassIcon, ScaleIcon } from "@heroicons/react/24/outline";
 import DarkModeToggle from "./DarkModeToggle";
+import PushNotificationManager from "./PushNotificationManager";
+import LanguageSwitcher from "./LanguageSwitcher";
+import ProductComparison from "./ProductComparison";
+import { useComparison } from "../context/ComparisonContext";
 
 export default function Navbar({ products = [] }) {
   const { cart } = useShop();
@@ -70,40 +74,63 @@ export default function Navbar({ products = [] }) {
     return count;
   };
 
+  const CompareButton = () => {
+    const { comparedProducts, openComparison } = useComparison();
+
+    if (comparedProducts.length === 0) return null;
+
+    return (
+      <button
+        onClick={openComparison}
+        className="relative p-2 text-white hover:text-green-200 transition-colors"
+        title="Compare Products"
+      >
+        <ScaleIcon className="w-5 h-5" />
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          {comparedProducts.length}
+        </span>
+      </button>
+    );
+  };
+
   return (
-    <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} className="bg-green-600 text-white shadow-lg dark:bg-gray-900 dark:text-gray-100">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="hover:opacity-80 transition-opacity flex items-center">
-            <Logo size="default" showText={true} logoSrc="/logo.png" />
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-6">
-            <Link to="/wishlist" className="flex items-center gap-2 hover:text-green-200 transition-colors">
-              <FaHeart className="text-xl" />
-              <span className="font-medium">Wishlist</span>
+    <>
+      <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} className="bg-green-600 text-white shadow-lg dark:bg-gray-900 dark:text-gray-100">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <Link to="/" className="hover:opacity-80 transition-opacity flex items-center">
+              <Logo size="default" showText={true} logoSrc="/logo.png" />
             </Link>
 
-            <Link to="/track-order" className="flex items-center gap-2 hover:text-green-200 transition-colors">
-              <FaSearch className="text-xl" />
-              <span className="font-medium">Track Order</span>
-            </Link>
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center gap-6">
+              <Link to="/wishlist" className="flex items-center gap-2 hover:text-green-200 transition-colors">
+                <FaHeart className="text-xl" />
+                <span className="font-medium">Wishlist</span>
+              </Link>
 
-            <Link to="/cart" className="relative flex items-center gap-2 hover:text-green-200 transition-colors">
-              <FaShoppingCart className="text-xl" />
-              <span className="font-medium">Cart</span>
-              {count > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {count}
-                </span>
-              )}
-            </Link>
+              <Link to="/track-order" className="flex items-center gap-2 hover:text-green-200 transition-colors">
+                <FaSearch className="text-xl" />
+                <span className="font-medium">Track Order</span>
+              </Link>
 
-            <DarkModeToggle />
+              <Link to="/cart" className="relative flex items-center gap-2 hover:text-green-200 transition-colors">
+                <FaShoppingCart className="text-xl" />
+                <span className="font-medium">Cart</span>
+                {count > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {count}
+                  </span>
+                )}
+              </Link>
 
-            <SignedIn>
+              <DarkModeToggle />
+              <PushNotificationManager />
+              <LanguageSwitcher />
+              <CompareButton />
+
+              <SignedIn>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <img src={user?.imageUrl || "/placeholder-avatar.png"} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
@@ -114,6 +141,9 @@ export default function Navbar({ products = [] }) {
                     Analytics
                   </Link>
                 )}
+                <Link to="/loyalty" className="bg-purple-600 text-white px-3 py-1 rounded-md hover:bg-purple-700 transition-colors text-sm">
+                  Loyalty
+                </Link>
                 {user?.publicMetadata?.role === 'admin' && (
                   <Link to="/admin" className="bg-yellow-600 text-white px-3 py-1 rounded-md hover:bg-yellow-700 transition-colors text-sm">
                     Admin

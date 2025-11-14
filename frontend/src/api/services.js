@@ -8,12 +8,18 @@ export const authService = {
 
 // Product services
 export const productService = {
-  getProducts: async () => {
-    const res = await api.get('/api/products');
-    // Backend returns { success, count, data: [...] }
-    return Array.isArray(res.data) ? res.data : (res.data?.data || []);
+  getProducts: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const url = `/api/products${queryString ? `?${queryString}` : ''}`;
+    const res = await api.get(url);
+    return res.data; // Backend now returns structured response
   },
   getProduct: (id) => api.get(`/api/products/${id}`),
+  getProductVariants: (id) => api.get(`/api/products/${id}/variants`),
+  getFeaturedProducts: () => api.get('/api/products/featured/all'),
+  getSaleProducts: () => api.get('/api/products/sale/all'),
+  getCategories: () => api.get('/api/products/categories/all'),
+  getBrands: () => api.get('/api/products/brands/all'),
   createProduct: (productData) => api.post('/api/products', productData),
   updateProduct: (id, productData) => api.put(`/api/products/${id}`, productData),
   deleteProduct: (id) => api.delete(`/api/products/${id}`),
