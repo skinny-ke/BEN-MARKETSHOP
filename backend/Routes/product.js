@@ -95,55 +95,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ✅ POST new product (admin only) - enhanced for variants and bundles
-router.post(
-  '/',
-  clerkAuth,
-  requireAdmin,
-  [
-    body('name').isString().isLength({ min: 2 }),
-    body('price').isFloat({ gt: 0 }),
-    body('cost').optional().isFloat({ min: 0 }),
-    body('description').optional().isString(),
-    body('image').optional().isURL().bail().isString(),
-    body('category').optional().isString(),
-    body('stock').optional().isInt({ min: 0 }),
-  ],
-  async (req, res) => {
-  try {
-    const {
-      name, price, cost, description, image, images, category, stock,
-      isVariant, parentProduct, variants,
-      isBundle, bundleItems, bundleDiscount,
-      tags, weight, dimensions, brand, sku, featured, onSale, salePrice, saleStart, saleEnd
-    } = req.body;
-
-    const newProduct = new Product({
-      name,
-      price,
-      ...(typeof cost !== 'undefined' ? { cost } : {}),
-      description,
-      image,
-      images: images || [],
-      category,
-      stock,
-      isVariant: isVariant || false,
-      parentProduct,
-      variants: variants || [],
-      isBundle: isBundle || false,
-      bundleItems: bundleItems || [],
-      bundleDiscount: bundleDiscount || 0,
-      tags: tags || [],
-      weight,
-      dimensions,
-      brand,
-      sku,
-      featured: featured || false,
-      onSale: onSale || false,
-      salePrice,
-      saleStart,
-      saleEnd
-    });
 // ✅ GET product variants (public)
 router.get('/:id/variants', async (req, res) => {
   try {
@@ -253,23 +204,72 @@ router.get('/brands/all', async (req, res) => {
   }
 });
 
-module.exports = router;
+// ✅ POST new product (admin only) - enhanced for variants and bundles
+router.post(
+  '/',
+  clerkAuth,
+  requireAdmin,
+  [
+    body('name').isString().isLength({ min: 2 }),
+    body('price').isFloat({ gt: 0 }),
+    body('cost').optional().isFloat({ min: 0 }),
+    body('description').optional().isString(),
+    body('image').optional().isURL().bail().isString(),
+    body('category').optional().isString(),
+    body('stock').optional().isInt({ min: 0 }),
+  ],
+  async (req, res) => {
+    try {
+      const {
+        name, price, cost, description, image, images, category, stock,
+        isVariant, parentProduct, variants,
+        isBundle, bundleItems, bundleDiscount,
+        tags, weight, dimensions, brand, sku, featured, onSale, salePrice, saleStart, saleEnd
+      } = req.body;
 
-    const product = await newProduct.save();
+      const newProduct = new Product({
+        name,
+        price,
+        ...(typeof cost !== 'undefined' ? { cost } : {}),
+        description,
+        image,
+        images: images || [],
+        category,
+        stock,
+        isVariant: isVariant || false,
+        parentProduct,
+        variants: variants || [],
+        isBundle: isBundle || false,
+        bundleItems: bundleItems || [],
+        bundleDiscount: bundleDiscount || 0,
+        tags: tags || [],
+        weight,
+        dimensions,
+        brand,
+        sku,
+        featured: featured || false,
+        onSale: onSale || false,
+        salePrice,
+        saleStart,
+        saleEnd
+      });
 
-    res.json({
-      success: true,
-      data: product,
-      message: 'Product created successfully'
-    });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create product'
-    });
+      const product = await newProduct.save();
+
+      res.json({
+        success: true,
+        data: product,
+        message: 'Product created successfully'
+      });
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create product'
+      });
+    }
   }
-});
+);
 
 // ✅ PUT update product (admin only)
 router.put('/:id', clerkAuth, requireAdmin, async (req, res) => {

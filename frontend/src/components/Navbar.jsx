@@ -95,7 +95,7 @@ export default function Navbar({ products = [] }) {
 
   return (
     <>
-      <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} className="bg-green-600 text-white shadow-lg dark:bg-gray-900 dark:text-gray-100">
+      <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} className="bg-primary text-white shadow-lg dark:bg-dark-bg-primary dark:text-dark-text-primary">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             {/* Logo */}
@@ -105,21 +105,21 @@ export default function Navbar({ products = [] }) {
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-6">
-              <Link to="/wishlist" className="flex items-center gap-2 hover:text-green-200 transition-colors">
+              <Link to="/wishlist" className="flex items-center gap-2 hover:text-primary-light transition-colors">
                 <FaHeart className="text-xl" />
                 <span className="font-medium">Wishlist</span>
               </Link>
 
-              <Link to="/track-order" className="flex items-center gap-2 hover:text-green-200 transition-colors">
+              <Link to="/track-order" className="flex items-center gap-2 hover:text-primary-light transition-colors">
                 <FaSearch className="text-xl" />
                 <span className="font-medium">Track Order</span>
               </Link>
 
-              <Link to="/cart" className="relative flex items-center gap-2 hover:text-green-200 transition-colors">
+              <Link to="/cart" className="relative flex items-center gap-2 hover:text-primary-light transition-colors">
                 <FaShoppingCart className="text-xl" />
                 <span className="font-medium">Cart</span>
                 {count > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 bg-secondary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {count}
                   </span>
                 )}
@@ -137,19 +137,19 @@ export default function Navbar({ products = [] }) {
                   <span className="text-sm">{user?.firstName}</span>
                 </div>
                 {user?.publicMetadata?.role === 'admin' && (
-                  <Link to="/analytics" className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                  <Link to="/analytics" className="bg-primary text-white px-3 py-1 rounded-md hover:bg-primary-dark transition-colors text-sm">
                     Analytics
                   </Link>
                 )}
-                <Link to="/loyalty" className="bg-purple-600 text-white px-3 py-1 rounded-md hover:bg-purple-700 transition-colors text-sm">
+                <Link to="/loyalty" className="bg-accent text-white px-3 py-1 rounded-md hover:bg-accent-dark transition-colors text-sm">
                   Loyalty
                 </Link>
                 {user?.publicMetadata?.role === 'admin' && (
-                  <Link to="/admin" className="bg-yellow-600 text-white px-3 py-1 rounded-md hover:bg-yellow-700 transition-colors text-sm">
+                  <Link to="/admin" className="bg-warning text-white px-3 py-1 rounded-md hover:bg-warning-dark transition-colors text-sm">
                     Admin
                   </Link>
                 )}
-                <button onClick={() => signOut()} className="flex items-center gap-2 hover:text-green-200 transition-colors">
+                <button onClick={() => signOut()} className="flex items-center gap-2 hover:text-primary-light transition-colors">
                   <FaSignOutAlt />
                   <span className="text-sm">Logout</span>
                 </button>
@@ -158,10 +158,10 @@ export default function Navbar({ products = [] }) {
 
             <SignedOut>
               <div className="flex items-center gap-4">
-                <Link to="/login" className="hover:text-green-200 transition-colors">
+                <Link to="/login" className="hover:text-primary-light transition-colors">
                   Login
                 </Link>
-                <Link to="/register" className="bg-white text-green-600 px-4 py-2 rounded-md hover:bg-green-50 transition-colors">
+                <Link to="/register" className="bg-white text-primary px-4 py-2 rounded-md hover:bg-neutral-50 transition-colors">
                   Sign Up
                 </Link>
               </div>

@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../Models/Order');
 const { clerkAuth, requireAdmin } = require('../middleware/clerkAuth');
+const { requireAuth } = require('@clerk/express');
 const { body } = require('express-validator');
 
 // ✅ GET all orders for current user (authenticated)
 router.get('/', clerkAuth, async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.auth.userId })
+const orders = await Order.find({ user: req.user.clerkId })
       .populate('items.product')
       .sort({ createdAt: -1 });
 
@@ -38,7 +39,7 @@ router.get('/:id', clerkAuth, async (req, res) => {
     }
 
     // Check if user owns this order (unless admin)
-    if (order.user.toString() !== req.auth.userId && req.user.role !== 'admin') {
+if (order.user.toString() !== req.user.clerkId && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Access denied',
@@ -74,7 +75,7 @@ router.post(
       const { items, totalAmount, shippingAddress, paymentMethod } = req.body;
 
       const newOrder = new Order({
-        user: req.auth.userId,
+user: req.user.clerkId,
         items,
         totalAmount,
         shippingAddress,
@@ -144,7 +145,7 @@ router.get('/:id/receipt', clerkAuth, async (req, res) => {
     if (!order)
       return res.status(404).json({ message: 'Order not found' });
 
-    if (order.user._id.toString() !== req.auth.userId && req.user.role !== 'admin') {
+if (order.user._id.toString() !== req.user.clerkId && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied' });
     }
 
@@ -240,7 +241,7 @@ router.get('/:id/timeline', clerkAuth, async (req, res) => {
     }
 
     // Ensure the user owns the order or is admin
-    if (order.user.toString() !== req.auth.userId && req.user.role !== 'admin') {
+if (order.user.toString() !== req.user.clerkId && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 

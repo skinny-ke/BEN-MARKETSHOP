@@ -1,7 +1,8 @@
 const express = require('express');
 const Review = require('../Models/Review');
 const Order = require('../Models/Order');
-const { clerkAuth, requireAuth } = require('../middleware/clerkAuth');
+const { clerkAuth, requireAdmin } = require('../middleware/clerkAuth');
+const { requireAuth } = require('@clerk/express');
 
 const router = express.Router();
 

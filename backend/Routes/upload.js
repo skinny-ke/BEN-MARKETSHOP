@@ -2,7 +2,8 @@
 const express = require('express');
 const router = express.Router();
 const { getSignedUploadUrl, uploadImage } = require('../Controllers/uploadController');
-const { clerkAuth, requireAuth } = require('../middleware/clerkAuth');
+const { clerkAuth, requireAdmin } = require('../middleware/clerkAuth');
+const { requireAuth } = require('@clerk/express');
 const { body } = require('express-validator');
 
 // Returns Cloudinary signed upload data if you prefer direct client uploads

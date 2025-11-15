@@ -43,79 +43,80 @@ const clerkAuth = requireAuth({
       const clerkId = req.auth.userId;
       const orgId = req.auth.orgId || null;
 
-    // Find or create the user in our database
-    let user = await User.findOne({ clerkId });
-    if (!user) {
-      try {
-        const clerkUser = await clerkClient.users.getUser(clerkId);
-        user = await User.create({
-          clerkId,
-          name:
-            `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() ||
-            clerkUser.username ||
-            'User',
-          email:
-            clerkUser.emailAddresses?.[0]?.emailAddress ||
-            `user-${clerkId}@unknown.com`,
-          role: 'user',
-          orgId,
-          image: clerkUser.imageUrl || '',
-          isActive: true,
-        });
-        console.log(`✅ Created new Clerk user in MongoDB: ${user.email}`);
-      } catch (clerkApiError) {
-        console.warn('⚠️ Could not fetch Clerk user details:', clerkApiError.message);
-        // Create user with minimal info
-        user = await User.create({
-          clerkId,
-          name: 'User',
-          email: `user-${clerkId}@unknown.com`,
-          role: 'user',
-          orgId,
-          image: '',
-          isActive: true,
-        });
+      // Find or create the user in our database
+      let user = await User.findOne({ clerkId });
+      if (!user) {
+        try {
+          const clerkUser = await clerkClient.users.getUser(clerkId);
+          user = await User.create({
+            clerkId,
+            name:
+              `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() ||
+              clerkUser.username ||
+              'User',
+            email:
+              clerkUser.emailAddresses?.[0]?.emailAddress ||
+              `user-${clerkId}@unknown.com`,
+            role: 'user',
+            orgId,
+            image: clerkUser.imageUrl || '',
+            isActive: true,
+          });
+          console.log(`✅ Created new Clerk user in MongoDB: ${user.email}`);
+        } catch (clerkApiError) {
+          console.warn('⚠️ Could not fetch Clerk user details:', clerkApiError.message);
+          // Create user with minimal info
+          user = await User.create({
+            clerkId,
+            name: 'User',
+            email: `user-${clerkId}@unknown.com`,
+            role: 'user',
+            orgId,
+            image: '',
+            isActive: true,
+          });
+        }
+      } else {
+        user.lastLogin = new Date();
+        if (orgId) user.orgId = orgId;
+        await user.save();
       }
-    } else {
-      user.lastLogin = new Date();
-      if (orgId) user.orgId = orgId;
-      await user.save();
+
+      // 👑 Admin auto-elevation
+      const adminList = (process.env.ADMIN_EMAILS || '')
+        .split(',')
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
+
+      if (
+        user.email &&
+        adminList.includes(user.email.toLowerCase()) &&
+        user.role !== 'admin'
+      ) {
+        user.role = 'admin';
+        await user.save();
+        console.log(`👑 Elevated ${user.email} to admin`);
+      }
+
+      req.user = {
+        id: user._id.toString(),
+        clerkId: user.clerkId,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        orgId: user.orgId,
+        image: user.image,
+      };
+
+      return next();
+    } catch (err) {
+      console.error('❌ Clerk auth error:', err.message);
+      return res
+        .status(401)
+        .json({ success: false, message: 'Authentication failed' });
     }
-
-    // 👑 Admin auto-elevation
-    const adminList = (process.env.ADMIN_EMAILS || '')
-      .split(',')
-      .map((e) => e.trim().toLowerCase())
-      .filter(Boolean);
-
-    if (
-      user.email &&
-      adminList.includes(user.email.toLowerCase()) &&
-      user.role !== 'admin'
-    ) {
-      user.role = 'admin';
-      await user.save();
-      console.log(`👑 Elevated ${user.email} to admin`);
-    }
-
-    req.user = {
-      id: user._id.toString(),
-      clerkId: user.clerkId,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      orgId: user.orgId,
-      image: user.image,
-    };
-
-    return next();
-  } catch (err) {
-    console.error('❌ Clerk auth error:', err.message);
-    return res
-      .status(401)
-      .json({ success: false, message: 'Authentication failed' });
   }
-};
+});
 
 const requireAdmin = (req, res, next) => {
   if (!req.auth || !req.auth.userId)
@@ -131,7 +132,7 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-const requireAuth = (req, res, next) => {
+const checkAuth = (req, res, next) => {
   if (!req.auth || !req.auth.userId)
     return res
       .status(401)
@@ -139,4 +140,4 @@ const requireAuth = (req, res, next) => {
   next();
 };
 
-module.exports = { clerkAuth, requireAdmin, requireAuth, verifyClerkToken };
+module.exports = { clerkAuth, requireAdmin, checkAuth, verifyClerkToken };
