@@ -169,8 +169,8 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <h1 className="text-3xl font-bold text-neutral-900 dark:text-dark-text-primary mb-2">Admin Dashboard</h1>
-            <p className="text-neutral-600 dark:text-dark-text-secondary">Welcome back, {user?.firstName}!</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+            <p className="text-gray-600">Welcome back, {user?.firstName}!</p>
           </motion.div>
   
           {/* Tab Navigation */}
@@ -186,10 +186,10 @@ export default function AdminDashboard() {
                 <button
                   key={tab.key}
                   onClick={() => setSelectedTab(tab.key)}
-                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md ${
                     selectedTab === tab.key
-                      ? 'bg-primary text-white'
-                      : 'text-neutral-500 dark:text-dark-text-secondary hover:text-neutral-700 dark:hover:text-dark-text-primary hover:bg-neutral-100 dark:hover:bg-dark-bg-secondary'
+                      ? 'bg-green-600 text-white'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <tab.icon className="w-4 h-4" />

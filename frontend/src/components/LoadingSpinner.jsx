@@ -1,14 +1,14 @@
 import { motion } from "framer-motion";
 import { FaShoppingBag, FaLeaf } from "react-icons/fa";
 
-export default function LoadingSpinner({
-  size = "default",
-  text = "Loading...",
+export default function LoadingSpinner({ 
+  size = "default", 
+  text = "Loading...", 
   showLogo = true,
   className = "",
-  primaryColor = "primary",
-  secondaryColor = "primary-dark",
-  accentColor = "warning"
+  primaryColor = "green-500",
+  secondaryColor = "green-600",
+  accentColor = "yellow-400"
 }) {
   const sizeClasses = {
     small: "w-8 h-8",
@@ -90,7 +90,7 @@ export default function LoadingSpinner({
             />
           ))}
         </div>
-        <span className={`${textSizes[size]} text-neutral-600 dark:text-dark-text-secondary font-medium`}>
+        <span className={`${textSizes[size]} text-gray-600 font-medium`}>
           {text}
         </span>
       </motion.div>
