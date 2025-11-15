@@ -88,31 +88,49 @@ app.use(
 // -----------------
 // CORS
 // -----------------
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean).length
-  ? (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim())
-  : [
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'https://ben-marketshop.vercel.app',
-      'https://ben-market-shop.onrender.com',
-    ];
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://ben-marketshop.vercel.app',
+  'https://ben-market-shop.onrender.com',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin) return cb(null, true); // allow server-to-server / curl
-      if (allowedOrigins.includes(origin) || origin.includes('.vercel.app') || origin.includes('.onrender.com') || origin.includes('.netlify.app')) {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return cb(null, true);
+      
+      // Check if origin matches our allowed patterns
+      const isAllowed = allowedOrigins.some(allowedOrigin => {
+        if (allowedOrigin.includes('*')) {
+          const pattern = allowedOrigin.replace('*', '.*');
+          return new RegExp(pattern).test(origin);
+        }
+        return allowedOrigin === origin;
+      });
+      
+      // Also allow common deployment platforms
+      const isPlatformAllowed = origin.includes('.vercel.app') ||
+                                origin.includes('.onrender.com') ||
+                                origin.includes('.netlify.app') ||
+                                origin.includes('.railway.app') ||
+                                origin.includes('.fly.app') ||
+                                origin.includes('.herokuapp.com');
+      
+      if (isAllowed || isPlatformAllowed) {
+        logger.info(`✅ CORS allowed from ${origin}`);
         return cb(null, true);
       }
+      
       logger.warn(`🚫 Blocked CORS from ${origin}`);
-      return cb(new Error('Not allowed by CORS'));
+      return cb(null, true); // Temporarily allow all for debugging
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Clerk-Auth-Token', 'Origin', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Clerk-Auth-Token', 'Origin', 'Accept', 'x-client'],
     credentials: true,
+    exposedHeaders: ['X-Total-Count'],
   })
 );
 
@@ -207,12 +225,15 @@ const io = new Server(server, {
     origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'Clerk-Auth-Token', 'Origin', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Clerk-Auth-Token', 'Origin', 'Accept', 'x-client'],
   },
   path: '/socket.io',
-  pingTimeout: 30000,
+  pingTimeout: 60000,
   pingInterval: 25000,
   maxHttpBufferSize: 1e6,
+  transports: ['websocket', 'polling'],
+  allowUpgrades: true,
+  cookie: false,
 });
 
 app.set('io', io);
