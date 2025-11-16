@@ -8,7 +8,7 @@ import {
   ChartBarIcon, ShoppingCartIcon, CurrencyDollarIcon, UsersIcon, ArrowTrendingUpIcon
 } from '@heroicons/react/24/outline';
 
-const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6'];
+const COLORS = ['#16A34A', '#2563EB', '#F59E0B', '#EF4444', '#F97316'];
 
 const StatCard = memo(({ title, value, change, icon: Icon, color = 'green' }) => (
   <motion.div

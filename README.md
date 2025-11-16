@@ -5,25 +5,29 @@ A modern, full-stack e-commerce platform built with React, Node.js, Express, and
 ## ✨ Features
 
 ### Frontend
-- 🎨 Modern, responsive UI with Tailwind CSS
+- 🎨 Modern, responsive UI with Tailwind CSS & custom brand colors
 - ⚡ Fast performance with React 18 and Vite
 - 🎭 Smooth animations with Framer Motion
 - 📱 Mobile-first design
-- 🔐 JWT authentication with refresh tokens
+- 🌓 Full light/dark mode support
 - 🛒 Shopping cart with persistent storage
 - 💳 M-Pesa payment integration
 - 🔍 Product search and filtering
-- 📊 Admin dashboard (coming soon)
+- 📊 Admin dashboard with real-time analytics
+- 💬 Real-time chat system
+- 📥 CSV import/export for products & orders
 
 ### Backend
 - 🚀 Express.js REST API
-- 🗄️ MongoDB with Mongoose ODM
-- 🔐 JWT authentication & authorization
+- 🗄️ MongoDB with Mongoose ODM (100% MongoDB)
+- 🔐 Clerk authentication (JWT-free)
 - 💰 M-Pesa STK Push integration
 - 📁 Cloudinary image upload
 - 🛡️ Security middleware (Helmet, CORS, Rate Limiting)
-- 📝 Request logging with Morgan
+- 📝 Request logging with Morgan & Winston
 - 🧪 Comprehensive error handling
+- 📊 Real-time analytics endpoints
+- 📥 CSV import/export APIs
 
 ## 🚀 Quick Start
 
@@ -57,25 +61,26 @@ A modern, full-stack e-commerce platform built with React, Node.js, Express, and
 
    **Backend `.env`:**
    ```env
-   # Database
-   MONGO_URI=mongodb://localhost:27017/benmarket
-
-   # JWT Secrets
-   JWT_SECRET=your_jwt_secret_key_here
-   JWT_REFRESH_SECRET=your_jwt_refresh_secret_key_here
-
    # Server
    PORT=5000
    NODE_ENV=development
-   FRONTEND_URL=http://localhost:3000
-   CORS_ORIGIN=http://localhost:3000
+
+   # Database
+   MONGO_URI=mongodb://localhost:27017/benmarket
+
+   # Clerk Authentication
+   CLERK_SECRET_KEY=sk_test_xxxxx
+   CLERK_WEBHOOK_SECRET=whsec_xxxxx
+
+   # Frontend URL
+   FRONTEND_URL=http://localhost:5173
 
    # Cloudinary (for image uploads)
    CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
    CLOUDINARY_API_KEY=your_cloudinary_api_key
    CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
-   # M-Pesa Configuration
+   # M-Pesa Configuration (optional)
    MPESA_CONSUMER_KEY=your_mpesa_consumer_key
    MPESA_CONSUMER_SECRET=your_mpesa_consumer_secret
    MPESA_SHORTCODE=174379
@@ -87,6 +92,7 @@ A modern, full-stack e-commerce platform built with React, Node.js, Express, and
    **Frontend `.env`:**
    ```env
    VITE_API_URL=http://localhost:5000
+   VITE_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
    ```
 
 4. **Seed the database**
@@ -216,14 +222,11 @@ BEN-MARKET/
 ### Environment Variables for Production
 Make sure to set all required environment variables in your production environment, especially:
 - `MONGO_URI` - Production MongoDB connection string
-- `JWT_SECRET` & `JWT_REFRESH_SECRET` - Strong, unique secrets
 - `MPESA_*` - Production M-Pesa credentials
 - `CLOUDINARY_*` - Production Cloudinary credentials
 
 ## 🔒 Security Features
 
-- JWT-based authentication with refresh tokens
-- Password hashing with bcrypt
 - CORS protection
 - Rate limiting
 - Helmet.js security headers
@@ -246,15 +249,25 @@ This project is licensed under the MIT License.
 
 For support, email support@benmarket.com or create an issue in the repository.
 
-## 🎯 Roadmap
+## ✅ Completed Features
 
-- [ ] Admin dashboard with analytics
+- [x] Admin dashboard with real-time analytics
+- [x] CSV import/export for products & orders
+- [x] Real-time chat system
+- [x] Order tracking
+- [x] Product reviews and ratings
+- [x] Wishlist functionality
+- [x] Clerk authentication (JWT-free)
+- [x] Full light/dark mode support
+- [x] Professional brand color palette
+- [x] Production-ready security
+
+## 🎯 Future Roadmap
+
 - [ ] Email notifications
-- [ ] Order tracking
-- [ ] Product reviews and ratings
-- [ ] Wishlist functionality
 - [ ] Multi-language support
 - [ ] Mobile app (React Native)
+- [ ] Advanced analytics & reporting
 
 ---
 

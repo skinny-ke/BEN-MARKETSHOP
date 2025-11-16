@@ -9,7 +9,7 @@ import api from "../api/axios";
 // ---------- Header Component ----------
 const ProfileHeader = ({ user, isEditing, toggleEdit, openUserProfile }) => {
   return (
-    <div className="bg-gradient-to-r from-green-600 to-green-700 px-6 py-8 text-white flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+    <div className="bg-gradient-to-r from-green to-green-light px-6 py-8 text-white flex flex-col md:flex-row md:justify-between md:items-center gap-4">
       <div className="flex items-center space-x-4">
         <div className="relative">
           <img
@@ -19,7 +19,7 @@ const ProfileHeader = ({ user, isEditing, toggleEdit, openUserProfile }) => {
           />
           <button
             onClick={openUserProfile}
-            className="absolute -bottom-2 -right-2 bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors"
+            className="absolute -bottom-2 -right-2 bg-green-light hover:bg-green text-white p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white"
             aria-label="Change Profile Picture"
           >
             <FaCamera className="w-3 h-3" />
@@ -34,7 +34,7 @@ const ProfileHeader = ({ user, isEditing, toggleEdit, openUserProfile }) => {
       </div>
       <button
         onClick={toggleEdit}
-        className="bg-white text-green-600 px-4 py-2 rounded-lg hover:bg-green-50 transition-colors flex items-center space-x-2"
+        className="bg-white text-primary px-4 py-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-green"
         aria-label="Edit Profile"
       >
         <FaEdit className="w-4 h-4" />
@@ -60,7 +60,7 @@ const PersonalInfo = ({ user, isEditing, formData, handleChange }) => (
             name={field}
             value={formData[field]}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-surface-dark text-text dark:text-text-dark"
           />
         ) : (
           <p className="text-gray-900">{user?.[field] || "Not provided"}</p>

@@ -55,17 +55,19 @@ export default function Logo({ size = "default", showText = true, className = ""
         ))}
 
         {/* Logo Image */}
-        {logoSrc ? (
-          <motion.img
-            src={logoSrc}
-            alt="Logo"
-            className="relative w-3/4 h-3/4 object-contain z-10"
-            whileHover={{ filter: "drop-shadow(0 0 12px rgba(255,255,255,0.7))" }}
-            transition={{ duration: 0.3 }}
-          />
-        ) : (
-          <span className="relative text-white text-lg z-10">Logo</span>
-        )}
+        <motion.img
+          src={logoSrc || "/logo.png"}
+          alt="BenMarket Logo"
+          className="relative w-full h-full object-contain z-10"
+          whileHover={{ filter: "drop-shadow(0 0 12px rgba(255,255,255,0.7))" }}
+          transition={{ duration: 0.3 }}
+          onError={(e) => {
+            // Fallback if logo doesn't exist
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'block';
+          }}
+        />
+        <span className="relative text-white text-lg z-10 hidden">BM</span>
 
         {/* Notification Dot */}
         <motion.div

@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 /** Helper: choose the correct icon for each step */
 function getStatusIcon(status, completed) {
-  if (completed) return <CheckCircle className="text-green-500" size={20} />;
+  if (completed) return <CheckCircle className="text-green" size={20} />;
   switch (status.toLowerCase()) {
     case "processing":
       return <Clock className="text-yellow-500" size={20} />;
@@ -23,7 +23,7 @@ function getStatusIcon(status, completed) {
 
 /** Helper: apply color classes based on status */
 function getStatusColor(status, completed) {
-  if (completed) return "text-green-600";
+  if (completed) return "text-green";
   switch (status.toLowerCase()) {
     case "processing":
       return "text-yellow-600";

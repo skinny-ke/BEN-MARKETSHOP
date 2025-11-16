@@ -197,6 +197,7 @@ app.use('/api/inventory', require('./Routes/inventory'));
 app.use('/api/email', require('./Routes/email'));
 app.use('/api/notifications', require('./Routes/notifications'));
 app.use('/api/loyalty', require('./Routes/loyalty'));
+app.use('/api/csv', require('./Routes/csv'));
 
 app.get('/health', (req, res) => res.json({ status: 'OK', env: NODE_ENV, uptime: process.uptime() }));
 app.get('/', (req, res) => res.send(`Ben Market API running in ${NODE_ENV} mode 🚀`));

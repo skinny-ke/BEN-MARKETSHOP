@@ -2,22 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Global Styles */
+/* Global Styles - BenMarket Brand Colors */
 body {
-  @apply bg-gray-50 text-gray-800 antialiased dark:bg-gray-900 dark:text-gray-100;
+  @apply bg-background-light text-text antialiased dark:bg-background-dark dark:text-text-dark;
 }
 
 /* Custom Reusable Classes */
 .input {
-  @apply border border-gray-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500;
+  @apply border border-border-light dark:border-border-dark rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-surface-dark text-text dark:text-text-dark;
 }
 
 .btn {
-  @apply bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded transition-colors duration-200;
+  @apply bg-primary hover:bg-primary-dark text-white font-semibold px-4 py-2 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+}
+
+.btn-success {
+  @apply bg-green hover:bg-green-light text-white font-semibold px-4 py-2 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2;
+}
+
+.btn-accent {
+  @apply bg-accent hover:bg-orange-600 text-white font-semibold px-4 py-2 rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2;
 }
 
 .card {
-  @apply bg-white shadow-md rounded-lg p-4 hover:shadow-lg transition-shadow duration-300 dark:bg-gray-800 dark:shadow-black/20;
+  @apply bg-background dark:bg-surface-dark shadow-md rounded-lg p-4 hover:shadow-lg transition-shadow duration-300 border border-border-light dark:border-border-dark;
 }
 
 .container {

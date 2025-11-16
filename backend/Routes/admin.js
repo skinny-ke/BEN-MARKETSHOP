@@ -13,16 +13,44 @@ const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
  */
 router.get('/overview', clerkAuth, requireAdmin, async (req, res) => {
   try {
-    const [totalUsers, activeUsers, totalProducts, totalOrders] = await Promise.all([
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const [totalUsers, activeUsers, totalProducts, totalOrders, revenueData, todayStats] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({ isActive: true }),
       Product.countDocuments(),
       Order.countDocuments(),
+      Order.aggregate([
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+      ]),
+      Promise.all([
+        User.countDocuments({ createdAt: { $gte: todayStart } }),
+        Order.countDocuments({ createdAt: { $gte: todayStart } }),
+        Order.aggregate([
+          { $match: { createdAt: { $gte: todayStart } } },
+          { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        ])
+      ])
     ]);
+
+    const totalRevenue = revenueData[0]?.total || 0;
+    const [newUsersToday, ordersToday, revenueTodayData] = todayStats;
+    const revenueToday = revenueTodayData[0]?.total || 0;
 
     res.json({
       success: true,
-      data: { totalUsers, activeUsers, totalProducts, totalOrders },
+      data: { 
+        totalUsers, 
+        activeUsers, 
+        totalProducts, 
+        totalOrders,
+        totalRevenue,
+        newUsersToday,
+        ordersToday,
+        revenueToday
+      },
     });
   } catch (error) {
     console.error('Error fetching admin dashboard:', error);

@@ -50,7 +50,7 @@ export default function Checkout() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -128,13 +128,13 @@ export default function Checkout() {
 
   if (paymentStep === 'processing') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center">
         <motion.div 
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center bg-white p-8 rounded-xl shadow-lg"
+          className="text-center bg-white dark:bg-surface-dark p-8 rounded-xl shadow-lg border border-border-light dark:border-border-dark"
         >
-          <FaSpinner className="text-4xl text-green-600 animate-spin mx-auto mb-4" />
+          <FaSpinner className="text-4xl text-green animate-spin mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Processing Payment</h2>
           <p className="text-gray-600">Please wait while we process your M-Pesa payment...</p>
         </motion.div>
@@ -144,18 +144,18 @@ export default function Checkout() {
 
   if (paymentStep === 'success') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center">
         <motion.div 
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center bg-white p-8 rounded-xl shadow-lg"
+          className="text-center bg-white dark:bg-surface-dark p-8 rounded-xl shadow-lg border border-border-light dark:border-border-dark"
         >
           <div className="text-6xl mb-4">✅</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Payment Initiated!</h2>
           <p className="text-gray-600 mb-6">Check your phone for M-Pesa prompt to complete payment.</p>
           <a 
             href="/"
-            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+            className="bg-green text-white px-6 py-3 rounded-lg hover:bg-green-light transition-colors focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
           >
             Continue Shopping
           </a>
@@ -165,7 +165,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background-light dark:bg-background-dark py-8">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -173,9 +173,9 @@ export default function Checkout() {
           className="max-w-4xl mx-auto flex flex-col lg:flex-row gap-8"
         >
           {/* Checkout Form */}
-          <div className="flex-1 bg-white rounded-xl shadow-lg p-6">
+          <div className="flex-1 bg-white dark:bg-surface-dark rounded-xl shadow-lg p-6 border border-border-light dark:border-border-dark">
             <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-              <FaMapMarkerAlt className="text-green-600" />
+              <FaMapMarkerAlt className="text-green" />
               Delivery Information
             </h2>
 
@@ -194,7 +194,7 @@ export default function Checkout() {
                   })}
                   type="tel"
                   placeholder="254xxxxxxxxx"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-surface-dark text-text dark:text-text-dark"
                 />
                 {errors.phone && (
                   <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
@@ -209,7 +209,7 @@ export default function Checkout() {
                   {...register("address", { required: "Address is required" })}
                   type="text"
                   placeholder="Enter your address"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-surface-dark text-text dark:text-text-dark"
                 />
                 {errors.address && (
                   <p className="mt-1 text-sm text-red-600">{errors.address.message}</p>
@@ -224,7 +224,7 @@ export default function Checkout() {
                   {...register("city", { required: "City is required" })}
                   type="text"
                   placeholder="Enter your city"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-surface-dark text-text dark:text-text-dark"
                 />
                 {errors.city && (
                   <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
@@ -239,7 +239,7 @@ export default function Checkout() {
                   {...register("notes")}
                   rows={3}
                   placeholder="Any special instructions..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-surface-dark text-text dark:text-text-dark"
                 />
                 <div className="absolute top-0 right-0 text-gray-400 text-xs mt-1 mr-1" title="Optional instructions">?</div>
               </div>
@@ -258,7 +258,7 @@ export default function Checkout() {
                       defaultChecked
                       className="mr-2"
                     />
-                    <FaPhone className="mr-2 text-green-600" />
+                    <FaPhone className="mr-2 text-green" />
                     M-Pesa (Mobile Money)
                   </label>
                   <label className="flex items-center">
@@ -268,7 +268,7 @@ export default function Checkout() {
                       {...register("paymentMethod")}
                       className="mr-2"
                     />
-                    <FaCreditCard className="mr-2 text-blue-600" />
+                    <FaCreditCard className="mr-2 text-primary" />
                     Cash on Delivery
                   </label>
                 </div>
@@ -277,7 +277,7 @@ export default function Checkout() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center gap-2"
+                className="w-full bg-green text-white py-3 px-6 rounded-lg hover:bg-green-light disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
               >
                 {loading ? (
                   <>
@@ -295,7 +295,7 @@ export default function Checkout() {
           </div>
 
           {/* Order Summary */}
-          <div className="flex-1 bg-white rounded-xl shadow-lg p-6 lg:sticky lg:top-24">
+          <div className="flex-1 bg-white dark:bg-surface-dark rounded-xl shadow-lg p-6 lg:sticky lg:top-24 border border-border-light dark:border-border-dark">
             <h2 className="text-xl font-semibold text-gray-800 mb-6">Order Summary</h2>
             
             <div className="space-y-4">
@@ -351,7 +351,7 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-600">Delivery</span>
-                <span className="font-semibold text-green-600">Free</span>
+                <span className="font-semibold text-green">Free</span>
               </div>
               <div className="flex justify-between items-center text-xl font-bold text-gray-800 pt-2 border-t border-gray-200">
                 <span>Total</span>
@@ -359,12 +359,12 @@ export default function Checkout() {
               </div>
             </div>
 
-            <div className="mt-6 p-4 bg-green-50 rounded-lg">
-              <div className="flex items-center gap-2 text-green-800">
+            <div className="mt-6 p-4 bg-green-50 dark:bg-green-900 rounded-lg">
+              <div className="flex items-center gap-2 text-green-800 dark:text-green-200">
                 <FaPhone />
                 <span className="font-semibold">Payment Information</span>
               </div>
-              <p className="text-sm text-green-700 mt-1">
+              <p className="text-sm text-green-700 dark:text-green-300 mt-1">
                 {watch('paymentMethod') === 'mpesa'
                   ? `You'll receive an M-Pesa prompt on ${phone || 'your phone'} to complete payment.`
                   : 'You will pay cash when your order is delivered to your address.'

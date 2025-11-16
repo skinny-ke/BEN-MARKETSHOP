@@ -205,21 +205,21 @@ export default function Admin() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatCard label="Total Products" value={stats.totalProducts} icon={FaBox} color="text-green-500" />
-            <StatCard label="Total Orders" value={stats.totalOrders} icon={FaShoppingCart} color="text-blue-500" />
+            <StatCard label="Total Products" value={stats.totalProducts} icon={FaBox} color="text-green" />
+            <StatCard label="Total Orders" value={stats.totalOrders} icon={FaShoppingCart} color="text-primary" />
             <StatCard
               label="Total Revenue"
               value={`KSh ${stats.totalRevenue.toLocaleString()}`}
               icon={FaChartBar}
-              color="text-yellow-500"
+              color="text-gold"
             />
-            <StatCard label="Pending Orders" value={stats.pendingOrders} icon={FaUsers} color="text-red-500" />
+            <StatCard label="Pending Orders" value={stats.pendingOrders} icon={FaUsers} color="text-accent" />
             {stats.netProfit !== undefined && (
               <StatCard
                 label="Net Profit"
                 value={`KSh ${stats.netProfit.toLocaleString()}`}
                 icon={FaChartBar}
-                color={stats.netProfit >= 0 ? "text-green-500" : "text-red-500"}
+                color={stats.netProfit >= 0 ? "text-green" : "text-red-500"}
               />
             )}
             {stats.profitMargin !== undefined && (
@@ -227,7 +227,7 @@ export default function Admin() {
                 label="Profit Margin"
                 value={`${stats.profitMargin.toFixed(1)}%`}
                 icon={FaChartBar}
-                color={stats.profitMargin >= 0 ? "text-green-500" : "text-red-500"}
+                color={stats.profitMargin >= 0 ? "text-green" : "text-red-500"}
               />
             )}
           </div>
@@ -249,7 +249,7 @@ export default function Admin() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
                       activeTab === tab.id
-                        ? "border-green-500 text-green-600"
+                        ? "border-primary text-primary"
                         : "border-transparent text-gray-500 hover:text-gray-700"
                     }`}
                   >
@@ -268,7 +268,7 @@ export default function Admin() {
                     <h2 className="text-2xl font-bold text-gray-800">Products</h2>
                     <button
                       onClick={() => setShowProductForm(true)}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                      className="bg-green text-white px-4 py-2 rounded-lg hover:bg-green-light transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
                     >
                       <FaPlus />
                       Add Product
@@ -277,7 +277,7 @@ export default function Admin() {
 
                   {loading ? (
                     <div className="text-center py-12">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
@@ -318,7 +318,7 @@ export default function Admin() {
                                 </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
                                   {product.category || "Uncategorized"}
                                 </span>
                               </td>

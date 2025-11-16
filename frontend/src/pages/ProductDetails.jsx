@@ -44,7 +44,7 @@ export default function ProductDetails() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading product...</p>
         </div>
       </div>
@@ -58,7 +58,7 @@ export default function ProductDetails() {
           <h2 className="text-2xl font-bold text-gray-600 mb-2">Product not found</h2>
           <button
             onClick={() => navigate("/")}
-            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+            className="bg-green text-white px-6 py-3 rounded-lg hover:bg-green-light transition-colors focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
           >
             Back to Home
           </button>
@@ -108,7 +108,7 @@ export default function ProductDetails() {
                       key={index}
                       onClick={() => setSelectedImage(index)}
                       className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${
-                        selectedImage === index ? "border-green-600" : "border-gray-200"
+                        selectedImage === index ? "border-primary" : "border-gray-200 dark:border-gray-700"
                       }`}
                     >
                       <img src={img} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
@@ -123,7 +123,7 @@ export default function ProductDetails() {
               <div>
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">{product.name}</h1>
                 {product.category && (
-                  <span className="inline-block bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full">
+                  <span className="inline-block bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm px-3 py-1 rounded-full">
                     {product.category}
                   </span>
                 )}
@@ -141,7 +141,7 @@ export default function ProductDetails() {
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="text-4xl font-bold text-green-600">
+                <div className="text-4xl font-bold text-green dark:text-green-light">
                   KSh {product.price?.toLocaleString()}
                 </div>
                 {product.stock !== undefined && (
@@ -191,7 +191,7 @@ export default function ProductDetails() {
                   whileTap={{ scale: 0.95 }}
                   onClick={handleAddToCart}
                   disabled={product.stock === 0}
-                  className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center gap-2"
+                  className="flex-1 bg-green text-white py-3 px-6 rounded-lg hover:bg-green-light disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
                 >
                   <FaShoppingCart /> Add to Cart
                 </motion.button>

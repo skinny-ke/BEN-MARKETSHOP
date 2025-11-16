@@ -90,10 +90,10 @@ export default function Wishlist() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="bg-green-600 text-white p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="bg-green text-white p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold">My Wishlist</h1>
-              <p className="text-green-100 mt-1">{wishlist.length} item{wishlist.length !== 1 ? 's' : ''} saved</p>
+              <p className="text-green-50 dark:text-green-100 mt-1">{wishlist.length} item{wishlist.length !== 1 ? 's' : ''} saved</p>
             </div>
             <button onClick={clearWishlist} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
               <TrashIcon className="w-4 h-4" /> Clear All

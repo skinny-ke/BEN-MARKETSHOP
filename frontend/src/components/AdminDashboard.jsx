@@ -15,13 +15,15 @@ import {
   FaToggleOff,
   FaUserCheck,
   FaUserTimes,
-  FaSync
+  FaSync,
+  FaDownload,
+  FaUpload
 } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { toast } from 'sonner';
 import axios from '../api/axios';
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
+const COLORS = ['#16A34A', '#2563EB', '#F59E0B', '#EF4444', '#F97316'];
 
 export default function AdminDashboard() {
   const { user } = useUser();
@@ -48,6 +50,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('overview');
   const [actionLoading, setActionLoading] = useState(false);
+  const [csvImportFile, setCsvImportFile] = useState(null);
+  const [csvImportLoading, setCsvImportLoading] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -80,16 +84,29 @@ export default function AdminDashboard() {
         setProducts(productsData);
         setTotalProducts(productsData.length);
   
-        // Generate sample analytics data for charts
-        const analyticsData = [
-          { month: 'Jan', sales: 45000, orders: 150 },
-          { month: 'Feb', sales: 52000, orders: 180 },
-          { month: 'Mar', sales: 48000, orders: 160 },
-          { month: 'Apr', sales: 61000, orders: 200 },
-          { month: 'May', sales: 55000, orders: 175 },
-          { month: 'Jun', sales: 67000, orders: 220 }
-        ];
-        setSalesData(analyticsData);
+        // Calculate real analytics data from orders
+        const ordersForAnalytics = ordersData.data || ordersData.orders || ordersData || [];
+        const last6Months = [];
+        for (let i = 5; i >= 0; i--) {
+          const date = new Date();
+          date.setMonth(date.getMonth() - i);
+          const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+          const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+          
+          const monthOrders = ordersForAnalytics.filter(order => {
+            const orderDate = new Date(order.createdAt);
+            return orderDate >= monthStart && orderDate <= monthEnd;
+          });
+          
+          const monthRevenue = monthOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+          
+          last6Months.push({
+            month: date.toLocaleString('default', { month: 'short' }),
+            sales: monthRevenue,
+            orders: monthOrders.length
+          });
+        }
+        setSalesData(last6Months);
   
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -155,13 +172,13 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-background-light dark:bg-background-dark p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <motion.div
@@ -169,8 +186,8 @@ export default function AdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-            <p className="text-gray-600">Welcome back, {user?.firstName}!</p>
+            <h1 className="text-3xl font-bold text-text dark:text-text-dark mb-2">Admin Dashboard</h1>
+            <p className="text-text-secondary dark:text-gray-400">Welcome back, {user?.firstName}!</p>
           </motion.div>
   
           {/* Tab Navigation */}
@@ -181,15 +198,16 @@ export default function AdminDashboard() {
                 { key: 'users', label: 'Users', icon: FaUsers },
                 { key: 'orders', label: 'Orders', icon: FaShoppingCart },
                 { key: 'products', label: 'Products', icon: FaBox },
+                { key: 'csv', label: 'CSV Tools', icon: FaDownload },
                 { key: 'sync', label: 'Sync Tools', icon: FaSync }
               ].map(tab => (
                 <button
                   key={tab.key}
                   onClick={() => setSelectedTab(tab.key)}
-                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md ${
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     selectedTab === tab.key
-                      ? 'bg-green-600 text-white'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      ? 'bg-primary text-white'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400'
                   }`}
                 >
                   <tab.icon className="w-4 h-4" />
@@ -213,21 +231,21 @@ export default function AdminDashboard() {
                   value={stats.totalUsers || 0}
                   icon={FaUsers}
                   color="blue"
-                  change="+12%"
+                  change={stats.newUsersToday > 0 ? `+${stats.newUsersToday} today` : 'No new users today'}
                 />
                 <StatCard
                   title="Total Orders"
                   value={stats.totalOrders || 0}
                   icon={FaShoppingCart}
-                  color="green"
-                  change="+8%"
+                  color="orange"
+                  change={stats.ordersToday > 0 ? `+${stats.ordersToday} today` : 'No orders today'}
                 />
                 <StatCard
                   title="Total Revenue"
                   value={`KSh ${(stats.totalRevenue || 0).toLocaleString()}`}
                   icon={FaDollarSign}
-                  color="purple"
-                  change="+15%"
+                  color="green"
+                  change={stats.revenueToday > 0 ? `+KSh ${stats.revenueToday.toLocaleString()} today` : 'No sales today'}
                 />
                 <StatCard
                   title="Total Products"
@@ -244,16 +262,16 @@ export default function AdminDashboard() {
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="bg-white rounded-lg shadow-md p-6"
+                  className="bg-white dark:bg-surface-dark rounded-lg shadow-md p-6 border border-border-light dark:border-border-dark"
                 >
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Sales Overview</h3>
+                  <h3 className="text-lg font-semibold text-text dark:text-text-dark mb-4">Sales Overview</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <LineChart data={salesData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
                       <YAxis />
                       <Tooltip />
-                      <Line type="monotone" dataKey="sales" stroke="#10b981" strokeWidth={2} />
+                      <Line type="monotone" dataKey="sales" stroke="#16A34A" strokeWidth={2} />
                     </LineChart>
                   </ResponsiveContainer>
                 </motion.div>
@@ -262,16 +280,16 @@ export default function AdminDashboard() {
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="bg-white rounded-lg shadow-md p-6"
+                  className="bg-white dark:bg-surface-dark rounded-lg shadow-md p-6 border border-border-light dark:border-border-dark"
                 >
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Orders by Status</h3>
+                  <h3 className="text-lg font-semibold text-text dark:text-text-dark mb-4">Orders by Status</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={salesData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="orders" fill="#3b82f6" />
+                      <Bar dataKey="orders" fill="#2563EB" />
                     </BarChart>
                   </ResponsiveContainer>
                 </motion.div>
@@ -284,11 +302,11 @@ export default function AdminDashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-lg shadow-md overflow-hidden"
+              className="bg-white dark:bg-surface-dark rounded-lg shadow-md overflow-hidden border border-border-light dark:border-border-dark"
             >
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
-                <p className="text-sm text-gray-600">Manage user roles and account status</p>
+                <h3 className="text-lg font-semibold text-text dark:text-text-dark">User Management</h3>
+                <p className="text-sm text-text-secondary dark:text-gray-400">Manage user roles and account status</p>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -358,10 +376,10 @@ export default function AdminDashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-lg shadow-md overflow-hidden"
+              className="bg-white dark:bg-surface-dark rounded-lg shadow-md overflow-hidden border border-border-light dark:border-border-dark"
             >
               <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Order Management</h3>
+                <h3 className="text-lg font-semibold text-text dark:text-text-dark">Order Management</h3>
                 <div className="flex items-center gap-2">
                   <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="border rounded px-2 py-1 text-sm">
                     <option value="all">All</option>
@@ -431,10 +449,10 @@ export default function AdminDashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-lg shadow-md overflow-hidden"
+              className="bg-white dark:bg-surface-dark rounded-lg shadow-md overflow-hidden border border-border-light dark:border-border-dark"
             >
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Product Management</h3>
+                <h3 className="text-lg font-semibold text-text dark:text-text-dark">Product Management</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -491,6 +509,115 @@ export default function AdminDashboard() {
             </motion.div>
           )}
   
+          {/* CSV Tools Tab */}
+          {selectedTab === 'csv' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              {/* Products CSV */}
+              <div className="bg-white dark:bg-surface-dark rounded-lg shadow-md p-6 border border-border-light dark:border-border-dark">
+                <h3 className="text-lg font-semibold text-text dark:text-text-dark mb-4">Products CSV</h3>
+                <div className="flex gap-4">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await axios.get('/api/csv/products/export', { responseType: 'blob' });
+                        const url = window.URL.createObjectURL(new Blob([response.data]));
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.setAttribute('download', 'products-export.csv');
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        toast.success('Products exported successfully');
+                      } catch (error) {
+                        toast.error('Failed to export products');
+                      }
+                    }}
+                    className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  >
+                    <FaDownload />
+                    Export Products
+                  </button>
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={(e) => setCsvImportFile(e.target.files[0])}
+                      className="hidden"
+                      id="product-csv-import"
+                    />
+                    <label
+                      htmlFor="product-csv-import"
+                      className="flex items-center gap-2 bg-green text-white px-4 py-2 rounded-md hover:bg-green-light transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2 inline-block"
+                    >
+                      <FaUpload />
+                      Import Products
+                    </label>
+                  </div>
+                  {csvImportFile && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          setCsvImportLoading(true);
+                          const reader = new FileReader();
+                          reader.onload = async (e) => {
+                            const csvData = e.target.result;
+                            const response = await axios.post('/api/csv/products/import', { csvData });
+                            if (response.data.success) {
+                              toast.success(`Successfully imported ${response.data.imported} products`);
+                              setCsvImportFile(null);
+                              fetchDashboardData();
+                            } else {
+                              toast.error(response.data.message || 'Import failed');
+                            }
+                            setCsvImportLoading(false);
+                          };
+                          reader.readAsText(csvImportFile);
+                        } catch (error) {
+                          toast.error('Failed to import products');
+                          setCsvImportLoading(false);
+                        }
+                      }}
+                      disabled={csvImportLoading}
+                      className="bg-accent text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                    >
+                      {csvImportLoading ? 'Importing...' : 'Upload'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Orders CSV */}
+              <div className="bg-white dark:bg-surface-dark rounded-lg shadow-md p-6 border border-border-light dark:border-border-dark">
+                <h3 className="text-lg font-semibold text-text dark:text-text-dark mb-4">Orders CSV</h3>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await axios.get('/api/csv/orders/export', { responseType: 'blob' });
+                      const url = window.URL.createObjectURL(new Blob([response.data]));
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.setAttribute('download', 'orders-export.csv');
+                      document.body.appendChild(link);
+                      link.click();
+                      link.remove();
+                      toast.success('Orders exported successfully');
+                    } catch (error) {
+                      toast.error('Failed to export orders');
+                    }
+                  }}
+                  className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                >
+                  <FaDownload />
+                  Export Orders
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           {/* Sync Tools Tab */}
           {selectedTab === 'sync' && (
             <motion.div
@@ -500,7 +627,7 @@ export default function AdminDashboard() {
             >
               {/* Clerk Sync Tool */}
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Sync Clerk User to Database</h3>
+                <h3 className="text-lg font-semibold text-text dark:text-text-dark mb-4">Sync Clerk User to Database</h3>
                 <form
                   onSubmit={async (e) => {
                     e.preventDefault();
@@ -522,25 +649,25 @@ export default function AdminDashboard() {
                   className="flex gap-2 items-center"
                 >
                   <input name="clerkId" placeholder="Enter Clerk user ID (user_...)" className="border rounded px-3 py-2 flex-1" />
-                  <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Sync</button>
+                  <button type="submit" className="px-4 py-2 bg-green text-white rounded hover:bg-green-light transition-colors focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2">Sync</button>
                 </form>
               </div>
   
               {/* System Health */}
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">System Health</h3>
+                <h3 className="text-lg font-semibold text-text dark:text-text-dark mb-4">System Health</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">✓</div>
-                    <div className="text-sm text-gray-600">Database Connected</div>
+                    <div className="text-2xl font-bold text-green">✓</div>
+                    <div className="text-sm text-text-secondary dark:text-gray-400">Database Connected</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">✓</div>
-                    <div className="text-sm text-gray-600">Clerk Auth Active</div>
+                    <div className="text-2xl font-bold text-green">✓</div>
+                    <div className="text-sm text-text-secondary dark:text-gray-400">Clerk Auth Active</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">✓</div>
-                    <div className="text-sm text-gray-600">M-Pesa Ready</div>
+                    <div className="text-2xl font-bold text-green">✓</div>
+                    <div className="text-sm text-text-secondary dark:text-gray-400">M-Pesa Ready</div>
                   </div>
                 </div>
               </div>
@@ -553,25 +680,25 @@ export default function AdminDashboard() {
 
 function StatCard({ title, value, icon: Icon, color, change }) {
   const colorClasses = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    purple: 'bg-purple-500',
-    orange: 'bg-orange-500'
+    blue: 'bg-primary',
+    green: 'bg-green',
+    orange: 'bg-accent',
+    purple: 'bg-purple-500'
   };
 
   return (
     <motion.div
       whileHover={{ scale: 1.05 }}
-      className="bg-white rounded-lg shadow-md p-6"
+      className="bg-white dark:bg-surface-dark rounded-lg shadow-md p-6 border border-border-light dark:border-border-dark"
     >
       <div className="flex items-center">
         <div className={`p-3 rounded-full ${colorClasses[color]} text-white`}>
           <Icon className="h-6 w-6" />
         </div>
         <div className="ml-4">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-semibold text-gray-900">{value}</p>
-          <p className="text-sm text-green-600">{change} from last month</p>
+          <p className="text-sm font-medium text-text-secondary dark:text-gray-400">{title}</p>
+          <p className="text-2xl font-semibold text-text dark:text-text-dark">{value}</p>
+          <p className="text-sm text-green dark:text-green-light">{change}</p>
         </div>
       </div>
     </motion.div>

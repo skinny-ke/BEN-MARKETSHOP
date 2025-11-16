@@ -27,7 +27,7 @@ const verifyClerkToken = async (token) => {
 
 /**
  * Clerk-only authentication middleware using requireAuth from @clerk/express.
- * This replaces the combined JWT + Clerk middleware.
+ * JWT logic and fallback have been fully removed; Clerk is the sole authentication system.
  */
 const clerkAuth = requireAuth({
   secretKey: process.env.CLERK_SECRET_KEY,

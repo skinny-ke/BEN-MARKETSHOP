@@ -6,7 +6,7 @@ export default function Footer() {
   return (
     <footer className="bg-gray-900 dark:bg-gray-950 text-gray-300 dark:text-gray-400 mt-16 transition-colors duration-300">
       {/* Newsletter Section */}
-      <div className="bg-gradient-to-r from-green-600 to-green-700 py-12">
+      <div className="bg-gradient-to-r from-green to-green-light py-12">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -26,7 +26,7 @@ export default function Footer() {
                 placeholder="Enter your email"
                 className="flex-1 px-4 py-3 rounded-lg border-0 focus:ring-2 focus:ring-white focus:ring-opacity-50"
               />
-              <button className="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-green-50 transition-colors">
+              <button className="bg-white text-primary px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-green">
                 Subscribe
               </button>
             </div>
@@ -101,15 +101,15 @@ export default function Footer() {
             <h4 className="text-lg font-semibold text-white mb-4">Contact Us</h4>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <FaPhone className="text-green-500" />
+                <FaPhone className="text-green" />
                 <span className="text-gray-400">+254 742 846 842</span>
               </div>
               <div className="flex items-center gap-3">
-                <FaEnvelope className="text-green-500" />
+                <FaEnvelope className="text-green" />
                 <span className="text-gray-400">bensonmurage89@gmail.com</span>
               </div>
               <div className="flex items-center gap-3">
-                <FaMapMarkerAlt className="text-green-500" />
+                <FaMapMarkerAlt className="text-green" />
                 <span className="text-gray-400">Nairobi, Kenya</span>
               </div>
             </div>
@@ -126,7 +126,7 @@ export default function Footer() {
               transition={{ duration: 0.5, delay: 0.1 }}
               viewport={{ once: true }}
             >
-              <div className="bg-green-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="bg-green w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
                 <FaRocket className="text-white text-xl" />
               </div>
               <h5 className="text-white font-semibold mb-2">Fast Delivery</h5>
@@ -140,7 +140,7 @@ export default function Footer() {
               transition={{ duration: 0.5, delay: 0.2 }}
               viewport={{ once: true }}
             >
-              <div className="bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="bg-primary w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
                 <FaDownload className="text-white text-xl" />
               </div>
               <h5 className="text-white font-semibold mb-2">Downloadable Content</h5>

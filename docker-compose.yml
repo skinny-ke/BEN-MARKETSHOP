@@ -27,9 +27,6 @@ services:
     environment:
       - NODE_ENV=production
       - MONGO_URI=mongodb://admin:password123@mongodb:27017/benmarket?authSource=admin
-      - JWT_SECRET=your_production_jwt_secret_change_this
-      - JWT_REFRESH_SECRET=your_production_jwt_refresh_secret_change_this
-      - JWT_EXPIRE=7d
       - FRONTEND_URL=http://frontend:80
       - CORS_ORIGIN=http://frontend:80
     depends_on:

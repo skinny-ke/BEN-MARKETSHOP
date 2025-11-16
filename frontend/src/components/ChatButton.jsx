@@ -67,7 +67,7 @@ const ChatButton = ({ receiverId = null }) => {
       {/* 💬 Floating Chat Button */}
       <button
         onClick={handleOpenChat}
-        className="fixed bottom-4 right-4 bg-blue-600 dark:bg-blue-700 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-all z-50"
+        className="fixed bottom-4 right-4 bg-primary dark:bg-primary-dark text-white p-4 rounded-full shadow-lg hover:bg-primary-dark dark:hover:bg-primary transition-all z-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
         title="Chat with Support"
       >
         <ChatBubbleLeftRightIcon className="h-6 w-6" />

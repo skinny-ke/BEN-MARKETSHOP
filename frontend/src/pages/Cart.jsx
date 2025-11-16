@@ -34,7 +34,7 @@ export default function Cart() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -49,7 +49,7 @@ export default function Cart() {
           </p>
           <Link
             to="/"
-            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+            className="bg-green text-white px-6 py-3 rounded-lg hover:bg-green-light transition-colors focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
           >
             Continue Shopping
           </Link>
@@ -67,16 +67,16 @@ export default function Cart() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background-light dark:bg-background-dark py-8">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl shadow-lg overflow-hidden"
+          className="bg-white dark:bg-surface-dark rounded-xl shadow-lg overflow-hidden border border-border-light dark:border-border-dark"
         >
-          <div className="bg-green-600 text-white p-6">
+          <div className="bg-green text-white p-6">
             <h1 className="text-3xl font-bold">Shopping Cart</h1>
-            <p className="text-green-100">
+            <p className="text-green-50 dark:text-green-100">
               {itemCount} item{itemCount !== 1 ? "s" : ""} in your cart
             </p>
           </div>
@@ -111,7 +111,7 @@ export default function Cart() {
                       {item.category && (
                         <span className="text-sm text-gray-500">{item.category}</span>
                       )}
-                      <div className="text-xl font-bold text-green-600 mt-1">
+                      <div className="text-xl font-bold text-green dark:text-green-light mt-1">
                         KSh {item.price?.toLocaleString()}
                       </div>
                     </div>
@@ -207,7 +207,7 @@ export default function Cart() {
                 </Link>
                 <Link
                   to="/checkout"
-                  className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg text-center hover:bg-green-700 transition-colors font-semibold"
+                  className="flex-1 bg-green text-white py-3 px-6 rounded-lg text-center hover:bg-green-light transition-colors font-semibold focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
                 >
                   Proceed to Checkout
                 </Link>

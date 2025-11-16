@@ -6,7 +6,7 @@ export default function Login() {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
+      className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark py-12 px-4 sm:px-6 lg:px-8"
     >
       <div className="max-w-md w-full">
         {/* Header */}
@@ -16,10 +16,10 @@ export default function Login() {
           transition={{ delay: 0.1 }}
           className="text-center mb-8"
         >
-          <h2 className="text-3xl font-extrabold text-gray-900">
+          <h2 className="text-3xl font-extrabold text-text dark:text-text-dark">
             Welcome Back
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-text-secondary dark:text-gray-400">
             Sign in to your BenMarket account
           </p>
         </motion.div>
@@ -34,13 +34,13 @@ export default function Login() {
           <SignIn 
             appearance={{
               elements: {
-                formButtonPrimary: "bg-green-600 hover:bg-green-700 text-sm normal-case",
+                formButtonPrimary: "bg-green hover:bg-green-light text-sm normal-case",
                 card: "shadow-lg rounded-xl overflow-hidden",
-                headerTitle: "text-gray-900",
-                headerSubtitle: "text-gray-600",
-                socialButtonsBlockButton: "border-gray-300 hover:bg-gray-50",
-                formFieldInput: "border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md",
-                footerActionLink: "text-green-600 hover:text-green-500"
+                headerTitle: "text-gray-900 dark:text-gray-100",
+                headerSubtitle: "text-gray-600 dark:text-gray-400",
+                socialButtonsBlockButton: "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800",
+                formFieldInput: "border-gray-300 dark:border-gray-600 focus:border-primary focus:ring-primary rounded-md",
+                footerActionLink: "text-primary hover:text-primary-dark"
               }
             }}
             redirectUrl="/"

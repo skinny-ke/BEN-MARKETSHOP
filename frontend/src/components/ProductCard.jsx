@@ -24,13 +24,13 @@ export default function ProductCard({ product }) {
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
             <Link 
               to={`/product/${product._id}`}
-              className="bg-white text-green-600 p-2 rounded-full hover:bg-green-50 transition-colors"
+              className="bg-white text-primary p-2 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <FaEye />
             </Link>
             <button
               onClick={() => addToCart(product)}
-              className="bg-green-600 text-white p-2 rounded-full hover:bg-green-700 transition-colors"
+              className="bg-green text-white p-2 rounded-full hover:bg-green-light transition-colors focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
               disabled={product.stock === 0}
             >
               <FaShoppingCart />
@@ -66,20 +66,20 @@ export default function ProductCard({ product }) {
         </h3>
 
         {product.category && (
-          <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mb-2">
+          <span className="inline-block bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs px-2 py-1 rounded-full mb-2">
             {product.category}
           </span>
         )}
 
         <div className="flex items-center justify-between mt-3">
-          <span className="text-2xl font-bold text-green-600">
+          <span className="text-2xl font-bold text-green dark:text-green-light">
             KSh {product.price?.toLocaleString()}
           </span>
           {product.stock !== undefined && (
             <span className={`text-sm px-2 py-1 rounded ${
               product.stock > 0 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
+                ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' 
+                : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
             }`}>
               {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
             </span>
@@ -104,7 +104,7 @@ export default function ProductCard({ product }) {
           <button 
             onClick={() => addToCart(product)}
             disabled={product.stock === 0}
-            className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="flex-1 bg-green text-white py-2 px-4 rounded-lg hover:bg-green-light disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
           >
             <FaShoppingCart className="text-sm" />
             Add to Cart
