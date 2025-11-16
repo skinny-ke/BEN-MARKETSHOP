@@ -37,7 +37,7 @@ const InventoryDashboard = () => {
   const fetchInventoryData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/inventory/dashboard');
+      const response = await api.get('/api/inventory/dashboard');
       if (response.data.success) {
         setInventoryData(response.data.data);
       }
@@ -56,7 +56,7 @@ const InventoryDashboard = () => {
     }
 
     try {
-      const response = await api.post('/inventory/stock', {
+      const response = await api.post('/api/inventory/stock', {
         productId: selectedProduct._id,
         ...stockForm,
         quantity: parseInt(stockForm.quantity),
@@ -78,7 +78,7 @@ const InventoryDashboard = () => {
 
   const acknowledgeAlert = async (alertId) => {
     try {
-      await api.post(`/inventory/alerts/${alertId}/acknowledge`);
+      await api.post(`/api/inventory/alerts/${alertId}/acknowledge`);
       toast.success('Alert acknowledged');
       fetchInventoryData();
     } catch (error) {

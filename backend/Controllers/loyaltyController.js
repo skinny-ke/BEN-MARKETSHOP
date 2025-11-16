@@ -29,7 +29,7 @@ const getLoyaltyProgram = async (req, res) => {
 // ✅ Get user's loyalty status
 const getUserLoyalty = async (req, res) => {
   try {
-    const clerkId = req.auth.userId;
+    const clerkId = req.user?.clerkId || req.auth?.userId;
 
     let userLoyalty = await UserLoyalty.findOne({ clerkId }).populate('user', 'name email');
     const program = await LoyaltyProgram.findOne({ isActive: true });
@@ -153,7 +153,7 @@ const awardReviewPoints = async (userId) => {
 const redeemPoints = async (req, res) => {
   try {
     const { points, reason } = req.body;
-    const clerkId = req.auth.userId;
+    const clerkId = req.user?.clerkId || req.auth?.userId;
 
     if (!points || points <= 0) {
       return res.status(400).json({
@@ -287,7 +287,7 @@ const manageLoyaltyProgram = async (req, res) => {
 // ✅ Generate referral code
 const generateReferralCode = async (req, res) => {
   try {
-    const clerkId = req.auth.userId;
+    const clerkId = req.user?.clerkId || req.auth?.userId;
     const referralCode = `BEN${Date.now().toString(36).toUpperCase()}`;
 
     const userLoyalty = await UserLoyalty.findOne({ clerkId });

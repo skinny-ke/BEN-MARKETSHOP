@@ -68,8 +68,9 @@ A modern, full-stack e-commerce platform built with React, Node.js, Express, and
    # Database
    MONGO_URI=mongodb://localhost:27017/benmarket
 
-   # Clerk Authentication
+   # Clerk Authentication (REQUIRED)
    CLERK_SECRET_KEY=sk_test_xxxxx
+   CLERK_PUBLISHABLE_KEY=pk_test_xxxxx  # Required for @clerk/express middleware
    CLERK_WEBHOOK_SECRET=whsec_xxxxx
 
    # Frontend URL
@@ -96,10 +97,23 @@ A modern, full-stack e-commerce platform built with React, Node.js, Express, and
    ```
 
 4. **Seed the database**
+   
+   **Basic seed (minimal data):**
    ```bash
    cd backend
    npm run seed
    ```
+   
+   **Enhanced seed (comprehensive test data - recommended for testing):**
+   ```bash
+   cd backend
+   npm run seed:enhanced
+   ```
+   This will create:
+   - 100+ products across 12 categories
+   - 50-100 sample orders (if users exist)
+   - Loyalty program setup
+   - Award loyalty points for existing orders
 
 5. **Start the development servers**
    ```bash
@@ -189,7 +203,8 @@ BEN-MARKET/
 **Backend:**
 - `npm run dev` - Start development server with nodemon
 - `npm start` - Start production server
-- `npm run seed` - Seed database with sample data
+- `npm run seed` - Seed database with basic sample data
+- `npm run seed:enhanced` - Seed database with comprehensive test data (100+ products, orders, loyalty points)
 
 **Frontend:**
 - `npm run dev` - Start development server

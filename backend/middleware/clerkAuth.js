@@ -31,8 +31,13 @@ const verifyClerkToken = async (token) => {
  */
 const clerkAuth = requireAuth({
   secretKey: process.env.CLERK_SECRET_KEY,
+  publishableKey: process.env.CLERK_PUBLISHABLE_KEY, // Add publishable key if available
   onError: (err, req, res) => {
     console.error('❌ Clerk auth error:', err.message);
+    // Provide more helpful error message
+    if (err.message && err.message.includes('Publishable key')) {
+      console.error('⚠️ Clerk publishable key missing. Set CLERK_PUBLISHABLE_KEY in environment variables.');
+    }
     return res
       .status(401)
       .json({ success: false, message: 'Authentication failed' });

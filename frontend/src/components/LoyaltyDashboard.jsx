@@ -19,7 +19,7 @@ const LoyaltyDashboard = () => {
   const fetchLoyaltyData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/loyalty');
+      const response = await api.get('/api/loyalty');
       if (response.data.success) {
         setLoyaltyData(response.data.data);
       }
@@ -39,7 +39,7 @@ const LoyaltyDashboard = () => {
 
     setRedeeming(true);
     try {
-      const response = await api.post('/loyalty/redeem', {
+      const response = await api.post('/api/loyalty/redeem', {
         points,
         reason: 'Points redeemed for discount'
       });
@@ -103,7 +103,7 @@ const LoyaltyDashboard = () => {
           className="max-w-6xl mx-auto"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl p-8 mb-8">
+          <div className="bg-gradient-to-r from-green to-green-light text-white rounded-xl p-8 mb-8">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold mb-2">{t('loyaltyPoints', 'Loyalty Points')}</h1>
@@ -121,7 +121,7 @@ const LoyaltyDashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white rounded-xl shadow-lg p-6 mb-6"
+            className="bg-white dark:bg-surface-dark rounded-xl shadow-lg p-6 mb-6 border border-border-light dark:border-border-dark"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -129,13 +129,13 @@ const LoyaltyDashboard = () => {
                   <span className="text-2xl">{getTierIcon(loyalty?.currentTier)}</span>
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold">{loyalty?.currentTier || 'Bronze'} Member</h3>
-                  <p className="text-gray-600">Current Tier</p>
+                <h3 className="text-xl font-semibold text-text dark:text-text-dark">{loyalty?.currentTier || 'Bronze'} Member</h3>
+                <p className="text-gray-600 dark:text-gray-400">Current Tier</p>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-gray-800">{loyalty?.totalPoints || 0}</div>
-                <div className="text-gray-600">Total Points Earned</div>
+                <div className="text-2xl font-bold text-text dark:text-text-dark">{loyalty?.totalPoints || 0}</div>
+                <div className="text-gray-600 dark:text-gray-400">Total Points Earned</div>
               </div>
             </div>
 
@@ -170,15 +170,15 @@ const LoyaltyDashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-xl shadow-lg p-6"
+              className="bg-white dark:bg-surface-dark rounded-xl shadow-lg p-6 border border-border-light dark:border-border-dark"
             >
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-green-100 rounded-full">
                   <StarIcon className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-800">{loyalty?.availablePoints || 0}</div>
-                  <div className="text-gray-600">Available Points</div>
+                  <div className="text-2xl font-bold text-text dark:text-text-dark">{loyalty?.availablePoints || 0}</div>
+                  <div className="text-gray-600 dark:text-gray-400">Available Points</div>
                 </div>
               </div>
             </motion.div>
@@ -187,15 +187,15 @@ const LoyaltyDashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-white rounded-xl shadow-lg p-6"
+              className="bg-white dark:bg-surface-dark rounded-xl shadow-lg p-6 border border-border-light dark:border-border-dark"
             >
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-blue-100 rounded-full">
                   <TrophyIcon className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-800">{loyalty?.lifetimeEarned || 0}</div>
-                  <div className="text-gray-600">Lifetime Earned</div>
+                  <div className="text-2xl font-bold text-text dark:text-text-dark">{loyalty?.lifetimeEarned || loyalty?.totalPoints || 0}</div>
+                  <div className="text-gray-600 dark:text-gray-400">Lifetime Earned</div>
                 </div>
               </div>
             </motion.div>
@@ -204,15 +204,15 @@ const LoyaltyDashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="bg-white rounded-xl shadow-lg p-6"
+              className="bg-white dark:bg-surface-dark rounded-xl shadow-lg p-6 border border-border-light dark:border-border-dark"
             >
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-red-100 rounded-full">
                   <GiftIcon className="w-6 h-6 text-red-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-800">{loyalty?.lifetimeRedeemed || 0}</div>
-                  <div className="text-gray-600">Lifetime Redeemed</div>
+                  <div className="text-2xl font-bold text-text dark:text-text-dark">{loyalty?.lifetimeRedeemed || (loyalty?.totalPoints - loyalty?.availablePoints) || 0}</div>
+                  <div className="text-gray-600 dark:text-gray-400">Lifetime Redeemed</div>
                 </div>
               </div>
             </motion.div>
@@ -223,9 +223,9 @@ const LoyaltyDashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-white rounded-xl shadow-lg p-6 mb-6"
+            className="bg-white dark:bg-surface-dark rounded-xl shadow-lg p-6 mb-6 border border-border-light dark:border-border-dark"
           >
-            <h3 className="text-xl font-semibold mb-4">How to Earn Points</h3>
+            <h3 className="text-xl font-semibold mb-4 text-text dark:text-text-dark">How to Earn Points</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-start gap-3 p-4 border rounded-lg">
                 <div className="p-2 bg-green-100 rounded-full">
@@ -282,9 +282,9 @@ const LoyaltyDashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="bg-white rounded-xl shadow-lg p-6 mb-6"
+            className="bg-white dark:bg-surface-dark rounded-xl shadow-lg p-6 mb-6 border border-border-light dark:border-border-dark"
           >
-            <h3 className="text-xl font-semibold mb-4">{t('redeemPoints', 'Redeem Points')}</h3>
+            <h3 className="text-xl font-semibold mb-4 text-text dark:text-text-dark">{t('redeemPoints', 'Redeem Points')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button
                 onClick={() => handleRedeemPoints(100)}
@@ -330,9 +330,9 @@ const LoyaltyDashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="bg-white rounded-xl shadow-lg p-6"
+              className="bg-white dark:bg-surface-dark rounded-xl shadow-lg p-6 border border-border-light dark:border-border-dark"
             >
-              <h3 className="text-xl font-semibold mb-4">Recent Activity</h3>
+              <h3 className="text-xl font-semibold mb-4 text-text dark:text-text-dark">Recent Activity</h3>
               <div className="space-y-3">
                 {loyalty.transactions.slice(0, 10).map((transaction, index) => (
                   <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">

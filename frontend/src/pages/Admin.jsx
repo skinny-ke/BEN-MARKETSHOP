@@ -19,7 +19,8 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [form, setForm] = useState({ name: '', description: '', price: '', cost: '', image: '', category: '', stock: '' });
+  const [form, setForm] = useState({ name: '', description: '', price: '', cost: '', image: '', category: '', stock: '', newCategory: '' });
+  const [categories, setCategories] = useState([]);
 
   // Redirect if not admin
   useEffect(() => {
@@ -31,7 +32,20 @@ export default function Admin() {
 
   useEffect(() => {
     fetchData();
+    fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const axios = (await import("../api/axios")).default;
+      const response = await axios.get('/api/products/categories/all');
+      if (response.data.success) {
+        setCategories(response.data.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -99,22 +113,27 @@ export default function Admin() {
       const response = await productService.updateProduct(id, updatedData);
       if (response.data.success !== false) {
         fetchData(); // Refresh list
+        setShowProductForm(false);
+        setEditingProduct(null);
+        setForm({ name: '', description: '', price: '', cost: '', image: '', category: '', stock: '', newCategory: '' });
         toast.success("Product updated successfully");
       }
     } catch (error) {
+      console.error("Update product error:", error);
       toast.error(error.response?.data?.message || "Failed to update product");
     }
   };
 
   const handleCreateProduct = async () => {
     try {
+      const categoryValue = form.category === '__new__' ? form.newCategory : form.category;
       const payload = {
         name: form.name.trim(),
         description: form.description.trim(),
         price: Number(form.price),
         cost: form.cost !== '' ? Number(form.cost) : undefined,
         image: form.image.trim(),
-        category: form.category.trim(),
+        category: categoryValue?.trim() || '',
         stock: form.stock !== '' ? Number(form.stock) : 0,
       };
       if (!payload.name || !payload.price) {
@@ -126,8 +145,12 @@ export default function Admin() {
         toast.success('Product created');
         setShowProductForm(false);
         setEditingProduct(null);
-        setForm({ name: '', description: '', price: '', cost: '', image: '', category: '', stock: '' });
+        setForm({ name: '', description: '', price: '', cost: '', image: '', category: '', stock: '', newCategory: '' });
+        if (categoryValue && !categories.includes(categoryValue.trim())) {
+          setCategories(prev => [...prev, categoryValue.trim()]);
+        }
         fetchData();
+        fetchCategories(); // Refresh categories
       }
     } catch (error) {
       console.error('Create product error:', error);
@@ -328,7 +351,7 @@ export default function Admin() {
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.stock || 0}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div className="flex space-x-2">
-                                  <button onClick={() => { setEditingProduct(product); setShowProductForm(true); setForm({ name: product.name || '', description: product.description || '', price: String(product.price || ''), cost: product.cost != null ? String(product.cost) : '', image: product.image || '', category: product.category || '', stock: String(product.stock || 0) }); }} className="text-indigo-600 hover:text-indigo-900">
+                                  <button onClick={() => { setEditingProduct(product); setShowProductForm(true); setForm({ name: product.name || '', description: product.description || '', price: String(product.price || ''), cost: product.cost != null ? String(product.cost) : '', image: product.image || '', category: product.category || '', stock: String(product.stock || 0), newCategory: '' }); }} className="text-indigo-600 hover:text-indigo-900">
                                     <FaEdit />
                                   </button>
                                   <button onClick={() => handleDeleteProduct(product._id)} className="text-red-600 hover:text-red-900">
@@ -466,23 +489,63 @@ export default function Admin() {
                 <div className="space-y-3">
                   {[
                     { key: 'name', label: 'Name', type: 'text' },
-                    { key: 'description', label: 'Description', type: 'text' },
+                    { key: 'description', label: 'Description', type: 'textarea' },
                     { key: 'price', label: 'Price', type: 'number' },
                     { key: 'cost', label: 'Cost (optional)', type: 'number' },
                     { key: 'image', label: 'Image URL', type: 'text' },
-                    { key: 'category', label: 'Category', type: 'text' },
                     { key: 'stock', label: 'Stock', type: 'number' },
                   ].map(f => (
                     <div key={f.key}>
-                      <label className="block text-sm text-gray-700 mb-1">{f.label}</label>
-                      <input
-                        type={f.type}
-                        value={form[f.key]}
-                        onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                        className="w-full border rounded px-3 py-2"
-                      />
+                      <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">{f.label}</label>
+                      {f.type === 'textarea' ? (
+                        <textarea
+                          value={form[f.key]}
+                          onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          rows={3}
+                        />
+                      ) : (
+                        <input
+                          type={f.type}
+                          value={form[f.key]}
+                          onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                          className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      )}
                     </div>
                   ))}
+                  <div>
+                    <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                    <select
+                      value={form.category}
+                      onChange={e => setForm(prev => ({ ...prev, category: e.target.value }))}
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="">Select a category</option>
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                      <option value="__new__">+ Add New Category</option>
+                    </select>
+                    {form.category === '__new__' && (
+                      <input
+                        type="text"
+                        placeholder="Enter new category name"
+                        value={form.newCategory || ''}
+                        onChange={e => setForm(prev => ({ ...prev, newCategory: e.target.value }))}
+                        onBlur={e => {
+                          if (e.target.value.trim()) {
+                            setForm(prev => ({ category: e.target.value.trim(), newCategory: '' }));
+                            if (!categories.includes(e.target.value.trim())) {
+                              setCategories(prev => [...prev, e.target.value.trim()]);
+                            }
+                          }
+                        }}
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 mt-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        autoFocus
+                      />
+                    )}
+                  </div>
                 </div>
                 <div className="mt-4 flex justify-end gap-2">
                   <button
@@ -493,23 +556,26 @@ export default function Admin() {
                   </button>
                   {editingProduct ? (
                     <button
-                      onClick={() => handleUpdateProduct(editingProduct._id, {
-                        name: form.name,
-                        description: form.description,
-                        price: Number(form.price),
-                        cost: form.cost !== '' ? Number(form.cost) : undefined,
-                        image: form.image,
-                        category: form.category,
-                        stock: form.stock !== '' ? Number(form.stock) : 0,
-                      })}
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      onClick={() => {
+                        const categoryValue = form.category === '__new__' ? form.newCategory : form.category;
+                        handleUpdateProduct(editingProduct._id, {
+                          name: form.name,
+                          description: form.description,
+                          price: Number(form.price),
+                          cost: form.cost !== '' ? Number(form.cost) : undefined,
+                          image: form.image,
+                          category: categoryValue?.trim() || '',
+                          stock: form.stock !== '' ? Number(form.stock) : 0,
+                        });
+                      }}
+                      className="px-4 py-2 bg-green text-white rounded hover:bg-green-light transition-colors focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
                     >
                       Save Changes
                     </button>
                   ) : (
                     <button
                       onClick={handleCreateProduct}
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      className="px-4 py-2 bg-green text-white rounded hover:bg-green-light transition-colors focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
                     >
                       Create Product
                     </button>
