@@ -52,10 +52,12 @@ export default function AdminDashboard() {
   const [actionLoading, setActionLoading] = useState(false);
   const [csvImportFile, setCsvImportFile] = useState(null);
   const [csvImportLoading, setCsvImportLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
-  }, [page, pageSize, statusFilter]);
+  }, [page, pageSize, statusFilter, search, roleFilter]);
 
   const fetchDashboardData = async () => {
       try {
@@ -416,15 +418,27 @@ export default function AdminDashboard() {
                           KSh {(order.totalAmount || 0).toLocaleString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                            order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
-                            order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                            order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {order.status}
-                          </span>
+                          <select
+                            value={order.status}
+                            onChange={async e => {
+                              await axios.put(`/api/orders/${order._id}/status`, { status: e.target.value });
+                              toast.success('Status updated!');
+                              fetchDashboardData();
+                            }}
+                            className={`rounded px-2 py-1 border text-xs font-semibold w-32 ${
+                              order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                              order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                              order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                              order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="shipped">Shipped</option>
+                            <option value="delivered">Delivered</option>
+                            <option value="cancelled">Cancelled</option>
+                          </select>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {new Date(order.createdAt).toLocaleDateString()}
@@ -454,6 +468,15 @@ export default function AdminDashboard() {
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-text dark:text-text-dark">Product Management</h3>
               </div>
+              {selectedTab === 'products' && (
+                <input
+                  type="text"
+                  placeholder="Search by name..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="mb-4 rounded border px-3 py-2"
+                />
+              )}
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -467,7 +490,7 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {products.slice(0, 10).map(product => (
+                    {products.filter(p => p.name && p.name.toLowerCase().includes(search.toLowerCase())).slice(0, 10).map(product => (
                       <tr key={product._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -506,6 +529,11 @@ export default function AdminDashboard() {
                   </tbody>
                 </table>
               </div>
+              {products.filter(p => p.stock < 5).length > 0 && (
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded">
+                  Warning: {products.filter(p => p.stock < 5).length} product(s) are low in stock!
+                </div>
+              )}
             </motion.div>
           )}
   

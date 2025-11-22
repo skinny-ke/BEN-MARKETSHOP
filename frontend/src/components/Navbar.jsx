@@ -171,9 +171,7 @@ export default function Navbar({ products = [] }) {
           {/* Mobile Navigation */}
           <MobileNav />
         </div>
-      </div>
-
-    </motion.nav>
+      </motion.nav>
 
     {/* Product Comparison Modal */}
     <ProductComparison

@@ -67,6 +67,7 @@ const WishlistButton = ({ product, size = 'w-6 h-6' }) => {
     } finally {
       setIsLoading(false);
     }
+    if (typeof window !== 'undefined' && window.updateWishlistBadge) window.updateWishlistBadge();
   }, [isWishlisted, isLoading, product, userData?.id]);
 
   return (
